@@ -1,3 +1,7 @@
+// Copyright (c) 2013 Aleksander Bielawski. All rights reserved.
+// Use of this source code is governed by a BSD-style license
+// that can be found in the LICENSE file.
+
 package com.github.pabzdzdzwiagief.initialization.plugin
 
 import scala.tools.nsc.Global
