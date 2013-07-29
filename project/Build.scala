@@ -47,6 +47,7 @@ object Build extends sbt.Build {
       name := "plugin",
       description := "the `initialization` plugin itself",
       organization := "com.github.pabzdzdzwiagief.initialization.plugin",
+      libraryDependencies +=  "org.scala-lang" % "scala-compiler" % "2.10.1",
       libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test",
       libraryDependencies += "com.novocode" % "junit-interface" % "0.9" % "test->default"
     )
