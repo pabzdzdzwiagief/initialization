@@ -18,5 +18,5 @@ class Initialization(val global: Global) extends Plugin {
 
   final val description = "checks for accesses to uninitialized fields"
 
-  final val components = List(order.phase(global), check.phase(global))
+  final val components = List(order.component(global), check.component(global))
 }
