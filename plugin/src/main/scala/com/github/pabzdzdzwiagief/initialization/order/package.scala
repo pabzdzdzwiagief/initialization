@@ -12,5 +12,5 @@ package object order {
     * class members to leave information about how initialization
     * sequence looks like.
     */
-  def component(global: Global): PluginComponent = ???
+  def component(global: Global): PluginComponent = new Order(global)
 }

@@ -4,8 +4,8 @@
 
 package com.github.pabzdzdzwiagief.initialization.plugin
 
-import scala.tools.nsc.Global
-import scala.tools.nsc.plugins.Plugin
+import tools.nsc.Global
+import tools.nsc.plugins.Plugin
 
 import com.github.pabzdzdzwiagief.initialization.check
 import com.github.pabzdzdzwiagief.initialization.order
