@@ -38,7 +38,7 @@ object Build extends sbt.Build {
       description := "scalac plugin for initialization order checking",
       organization := "com.github.pabzdzdzwiagief.initialization"
     )
-  ) aggregate (plugin, annotations)
+  ) aggregate (plugin, annotation)
 
   lazy val plugin = Project(
     id = "plugin",
@@ -51,11 +51,11 @@ object Build extends sbt.Build {
       libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test",
       libraryDependencies += "com.novocode" % "junit-interface" % "0.9" % "test->default"
     )
-  ) dependsOn(annotations)
+  ) dependsOn(annotation)
 
-  lazy val annotations = Project(
-    id = "annotations",
-    base = file("annotations"),
+  lazy val annotation = Project(
+    id = "annotation",
+    base = file("annotation"),
     settings = common ++ Seq(
       name := "annotations",
       description := "library dependencies for projects using the `initialization` plugin",
