@@ -12,7 +12,6 @@ object Build extends sbt.Build {
     scalacOptions := Seq(
       "-deprecation",
       "–unchecked",
-      "-explaintypes",
       "-feature"
     ),
     startYear     := Some(2013),
@@ -48,8 +47,7 @@ object Build extends sbt.Build {
       description := "the `initialization` plugin itself",
       organization := "com.github.pabzdzdzwiagief.initialization.plugin",
       libraryDependencies +=  "org.scala-lang" % "scala-compiler" % "2.10.1",
-      libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test",
-      libraryDependencies += "com.novocode" % "junit-interface" % "0.9" % "test->default"
+      libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test"
     )
   ) dependsOn(annotation)
 
