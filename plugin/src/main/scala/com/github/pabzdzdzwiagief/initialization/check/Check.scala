@@ -12,7 +12,7 @@ private[this] class Check(val global: Global)
   extends PluginComponent with AnnotationCheckerComponent {
   final val phaseName = "initcheck"
 
-  final val runsAfter = List("initseq", "refchecks")
+  final val runsAfter = List("initorder", "refchecks")
 
   final def newPhase(prev: Phase): Phase = checker(prev)
 }

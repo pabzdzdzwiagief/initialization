@@ -13,5 +13,5 @@ package object check {
     * correct (i.e. there are no obvious reference-before-initialization
     * errors).
     */
-  def component(global: Global): PluginComponent = ???
+  def component(global: Global): PluginComponent = new Check(global)
 }
