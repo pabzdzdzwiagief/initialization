@@ -8,7 +8,7 @@ import Keys._
 object Build extends sbt.Build {
   val common = Defaults.defaultSettings ++ Seq (
     version       := "0.1.0",
-    scalaVersion  := "2.10.1",
+    scalaVersion  := "2.10.2",
     scalacOptions := Seq(
       "-deprecation",
       "–unchecked",
@@ -46,7 +46,7 @@ object Build extends sbt.Build {
       name := "plugin",
       description := "the `initialization` plugin itself",
       organization := "com.github.pabzdzdzwiagief.initialization.plugin",
-      libraryDependencies +=  "org.scala-lang" % "scala-compiler" % "2.10.1",
+      libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.10.2",
       libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test"
     )
   ) dependsOn(annotation)
