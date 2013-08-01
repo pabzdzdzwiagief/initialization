@@ -7,4 +7,3 @@ class example {
 }
 
 // warning: there were 1 feature warning(s); re-run with -feature for details
-//

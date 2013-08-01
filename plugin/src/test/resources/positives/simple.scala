@@ -12,4 +12,3 @@ class simple {
 }
 
 // some warning that m1 leads to v1 being read too early
-//
