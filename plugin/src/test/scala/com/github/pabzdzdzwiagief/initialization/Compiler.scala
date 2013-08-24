@@ -35,15 +35,16 @@ class Compiler(pluginClasses: Plugin.AnyClass*) extends (SourceFile => String) {
   /** nsc compiler object with additional plugins. */
   private val global = {
     val settings = {
-      import annotation.{uncheckedInitialization => unchecked}
+      import annotation.{Annotation => ForAnnotations}
       import runtime.{Boxed => ForScalaLibrary}
       import Class.forName
       def path(name: String) =
         forName(name).getProtectionDomain.getCodeSource.getLocation.getPath
       val value = new GenericRunnerSettings(e => throw new RuntimeException(e))
       value.classpath.append(path(classOf[Global].getName))
-      value.classpath.append(path(classOf[unchecked].getName))
+      value.classpath.append(path(classOf[ForAnnotations].getName))
       value.bootclasspath.append(path(classOf[ForScalaLibrary].getName))
+      value.bootclasspath.append(path(classOf[ForAnnotations].getName))
       value
     }
     val reporter = new ConsoleReporter(settings, null, new PrintWriter(writer))
