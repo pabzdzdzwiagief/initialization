@@ -11,4 +11,10 @@ class simple {
   }
 }
 
-// some warning that m1 leads to v1 being read too early
+// simple.scala:10: warning: value v1 is referenced before assignment
+//         at localhost.simple.m1(simple.scala:6)
+//         at localhost.simple.<init>(simple.scala:5)
+//
+//     println(v1)
+//             ^
+

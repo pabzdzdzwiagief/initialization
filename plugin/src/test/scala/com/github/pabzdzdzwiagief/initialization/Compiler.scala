@@ -22,11 +22,13 @@ class Compiler(pluginClasses: Plugin.AnyClass*) extends (SourceFile => String) {
   def apply(source: SourceFile): String = {
     def removeLastNewline(string: String) =
       if (string.lastOption.exists(_ == '\n')) string.init else string
+    def tabsToEightSpaces(string: String) =
+      string.replace("\t", "        ")
     val compilation = new global.Run
     compilation.compileSources(List(source))
     val output = writer.getBuffer.toString
     writer.getBuffer.setLength(0)
-    removeLastNewline(output)
+    tabsToEightSpaces(removeLastNewline(output))
   }
 
   /** Output buffer for compiler reports. */
