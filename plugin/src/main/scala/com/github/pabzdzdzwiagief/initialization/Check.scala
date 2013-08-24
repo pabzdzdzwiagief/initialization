@@ -22,7 +22,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
 
   final def newPhase(prev: Phase): Phase = new CheckerPhase(prev)
 
-  private class CheckerPhase(prev: Phase) extends StdPhase(prev) {
+  private[this] class CheckerPhase(prev: Phase) extends StdPhase(prev) {
     import reflect.internal.util.OffsetPosition
 
     /** Warns upon detection of any reference before assignment. */
@@ -51,11 +51,11 @@ private[this] class Check(val global: Global) extends PluginComponent {
       unit.warning(position(lastMethod, access.ordinal), stringWriter.toString)
     }
 
-    private def position(method: MethodSymbol, point: Int) =
+    private[this] def position(method: MethodSymbol, point: Int) =
       new OffsetPosition(new BatchSourceFile(method.sourceFile), point)
   }
 
-  private object environment extends Environment {
+  private[this] object environment extends Environment {
     type Instruction = annotation.Instruction
 
     def flatten(x: Instruction): Either[x.type, Stream[Instruction]] =
@@ -86,7 +86,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
     /** Loads information about instructions executed in given method
       * from annotations attached to it.
       */
-    private def invoke(method: MethodSymbol): Seq[Instruction] = for {
+    private[this] def invoke(method: MethodSymbol): Seq[Instruction] = for {
       info ← method.annotations
       annotationClass = Class.forName(info.atp.typeSymbol.fullName)
       if classOf[Instruction].isAssignableFrom(annotationClass)

@@ -24,7 +24,7 @@ private[this] class Order(val global: Global)
 
   final def newTransformer(unit: CompilationUnit): Transformer = annotator
 
-  private val annotator: Transformer = new Transformer {
+  private[this] val annotator: Transformer = new Transformer {
     /** Annotates methods of every class.
       * Annotations inform about anything that can help spotting possible
       * initialization problems, e.g. which class members are used.
@@ -38,7 +38,7 @@ private[this] class Order(val global: Global)
     }
 
     /** Annotates methods with information about what happens in them. */
-    private def annotate(classDef: ClassDef) = for {
+    private[this] def annotate(classDef: ClassDef) = for {
       method@ DefDef(_, _, _,  _, _, _) ← classDef.impl.body
       m = method.symbol.asMethod
       subtree ← method
@@ -59,7 +59,7 @@ private[this] class Order(val global: Global)
     /** Converts regular annotation object to
       * [[scala.reflect.internal.AnnotationInfos#AnnotationInfo]].
       */
-    private def info(annotation: Instruction): AnnotationInfo = {
+    private[this] def info(annotation: Instruction): AnnotationInfo = {
       val name = newTypeName(annotation.getClass.getCanonicalName)
       val classSymbol = rootMirror.getClassByName(name)
       val args = annotation.productIterator.map(c => Literal(Constant(c)))
