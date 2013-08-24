@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license
 // that can be found in the LICENSE file.
 
-package com.github.pabzdzdzwiagief.initialization.order
+package com.github.pabzdzdzwiagief.initialization
 
 import tools.nsc.Global
 import tools.nsc.plugins.PluginComponent
 import tools.nsc.transform.Transform
 
-import com.github.pabzdzdzwiagief.initialization.annotation._
+import annotation._
 
 private[this] class Order(val global: Global)
   extends PluginComponent with Transform {

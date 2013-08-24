@@ -1,4 +1,4 @@
 <plugin>
   <name>initialization</name>
-  <classname>com.github.pabzdzdzwiagief.initialization.plugin.Initialization</classname>
+  <classname>com.github.pabzdzdzwiagief.initialization.Initialization</classname>
 </plugin>

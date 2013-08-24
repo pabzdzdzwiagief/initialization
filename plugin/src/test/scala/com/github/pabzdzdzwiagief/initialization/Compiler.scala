@@ -4,12 +4,12 @@
 
 package com.github.pabzdzdzwiagief.initialization
 
+import java.io.{StringWriter, PrintWriter}
+import reflect.internal.util.SourceFile
 import tools.nsc.Global
 import tools.nsc.GenericRunnerSettings
 import tools.nsc.plugins.Plugin
 import tools.nsc.reporters.ConsoleReporter
-import reflect.internal.util.SourceFile
-import java.io.{StringWriter, PrintWriter}
 
 /** Compiles Scala source code.
   * @param pluginClasses classes of nsc plugins to use during compilation.

@@ -11,8 +11,6 @@ import java.io.{File => JFile}
 import org.scalatest.FunSuite
 import org.scalatest.BeforeAndAfter
 
-import plugin.Initialization
-
 /** Tests if compilation outputs are matching those expected. */
 class InitializationCheckingSuite extends FunSuite with BeforeAndAfter {
   for (fileName <- testFileNames) {

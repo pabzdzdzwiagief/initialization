@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license
 // that can be found in the LICENSE file.
 
-package com.github.pabzdzdzwiagief.initialization.check
+package com.github.pabzdzdzwiagief.initialization
 
 import reflect.internal.util.BatchSourceFile
 import tools.nsc.Global
 import tools.nsc.Phase
 import tools.nsc.plugins.PluginComponent
 
-import com.github.pabzdzdzwiagief.initialization.annotation._
+import annotation._
 
 private[this] class Check(val global: Global) extends PluginComponent {
   import global.{ClassDef, CompilationUnit, Literal, MethodSymbol}
