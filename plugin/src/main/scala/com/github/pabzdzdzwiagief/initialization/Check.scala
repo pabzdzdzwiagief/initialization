@@ -13,6 +13,7 @@ import annotation._
 
 private[this] class Check(val global: Global) extends PluginComponent {
   import global.{ClassDef, CompilationUnit, Literal, MethodSymbol}
+  import ReferenceBeforeAssignmentChecker.Environment
 
   final val phaseName = "initcheck"
 
@@ -28,7 +29,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
     override def apply(unit: CompilationUnit) = for {
       classDef@ ClassDef(_, _, _, _) ← unit.body
       constructor = classDef.symbol.asClass.primaryConstructor.asMethod
-      checker = referenceBeforeAssignmentChecker(environment)(_)
+      checker = ReferenceBeforeAssignmentChecker(environment)(_)
       access :: tail ← checker(Invoke(constructor, constructor.pos.point))
       javaStackTrace = for {
         Invoke(method: MethodSymbol, ordinal) ← tail
@@ -54,7 +55,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
       new OffsetPosition(new BatchSourceFile(method.sourceFile), point)
   }
 
-  private object environment extends referenceBeforeAssignmentChecker.Compiler {
+  private object environment extends Environment {
     type Instruction = annotation.Instruction
 
     def flatten(x: Instruction): Either[x.type, Stream[Instruction]] =
@@ -97,44 +98,4 @@ private[this] class Check(val global: Global) extends PluginComponent {
   }
 }
 
-private object referenceBeforeAssignmentChecker {
-  trait Compiler {
-    /** Program instruction, like variable access or method invocation. */
-    type Instruction <: AnyRef
 
-    /** @return Left if x is inflattenable, Right if given instruction can be
-      *         broken down into simpler instructions.
-      */
-    def flatten(x: Instruction): Either[x.type, Stream[Instruction]]
-
-    /** @return true if x happens before y, false otherwise. */
-    def lessThan(x: Instruction, y: Instruction): Boolean
-
-    /** @return true if executing x before y should be considered errorneous,
-      *         false otherwise.
-      */
-    def conflict(x: Instruction, y: Instruction): Boolean
-  }
-
-  /** @param env compiler environment.
-    * @param start instruction stating from which execution is simulated
-    *              in search of reference-before-assignment errors.
-    * @return stream of stack traces to values which are referenced
-    *         before their assignment.
-    */
-  def apply(env: Compiler)
-           (start: env.Instruction): Stream[List[env.Instruction]] = {
-    type Stack = List[env.Instruction]
-    def flattenClosure(x: Stack): Stream[Stack] = env.flatten(x.head) match {
-      case Left(_) => Stream(x)
-      case Right(newInstructions) => for {
-        instruction ← newInstructions.sortWith(env.lessThan(_, _))
-        inflattenable ← flattenClosure(instruction :: x)
-      } yield inflattenable
-    }
-    def instructionPairs = flattenClosure(List(start)).combinations(2).toStream
-    for {
-      Stream(stack@ x :: _ , y :: _) ← instructionPairs if env.conflict(x, y)
-    } yield stack
-  }
-}
