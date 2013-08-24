@@ -2,7 +2,7 @@ initialization
 ==============
 
 Scala compiler plugin checking if compiled code may run into
-any of the several Scala's initialization order
+any of several Scala's initialization order
 [pitfalls](https://github.com/paulp/scala-faq/wiki/Initialization-Order).
 This plugin does not pretend to prevent every
 reference-before-initialization. Still, at least some classes of such
@@ -18,49 +18,32 @@ compilation
 
      sbt package
 
-status
-------
-
-At concept stage.
-
-concept
+example
 -------
 
-The plugin provides two additional compilation phases: `init-order`
-and `init-check`. The `init-order` phase leaves metadata about
-initialization order, while the `init-check` phase verifies
-correctness of that order.
+    // simple.scala
 
-* `init-order`
+    pacakge localhost
 
-This phase leaves certain annotations in resulting classfiles. Those
-annotations allow to tell how initialization sequence looks like.
-
-    @Reference(method m1, file1.scala, line-4)
-    @Definition(val v1, file1.scala, line-5)
-    class C {
+    class simple {
       m1()
       val v1 = 4
 
-      @Reference(val v1, file1.scala, line-9)
       def m1() {
         println(v1)
       }
     }
 
-This part is done right after typechecking, when AST has most of the
-necessary type information but has not become too messy yet.
-It could probably be done even later with analysis of generated
-bytecode, but then the messages issued after compilation would be
-rather incomprehensible.
+The code above will generate following warning:
 
-* `init-check`
+    simple.scala:10: warning: value v1 is referenced before assignment
+            at localhost.simple.m1(simple.scala:6)
+            at localhost.simple.<init>(simple.scala:5)
 
-This phase reads the reference graph from annotations and tries to
-find any errors.
+        println(v1)
+                ^
 
-There is more to it, like early definitions or class linearization,
-but this is the general idea.
+For more examples see `plugin/src/test/resources/positives/`.
 
 license
 -------
