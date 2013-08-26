@@ -67,13 +67,13 @@ private[this] class Check(val global: Global) extends PluginComponent {
 
     def lessThan(x: Instruction, y: Instruction) =
       x.ordinal < y.ordinal || x.ordinal == y.ordinal && (x match {
-        case access: Access => false
+        case assign: Assign => false
         case invoke: Invoke => y match {
           case a: Access => true
           case _ => false
         }
-        case assign: Assign => y match {
-          case a: Access => true
+        case access: Access => y match {
+          case a: Assign => true
           case i: Invoke => true
           case _ => false
         }
