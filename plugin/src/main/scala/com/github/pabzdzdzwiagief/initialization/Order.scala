@@ -15,7 +15,7 @@ private[this] class Order(val global: Global)
   import global.{CompilationUnit, Transformer}
   import global.{Tree, ClassDef, DefDef}
   import global.{Select, This, Assign => AssignTree, Apply, Literal, Constant}
-  import global.{rootMirror, newTypeName, AnnotationInfo}
+  import global.{newTypeName, rootMirror, AnnotationInfo}
 
   final val phaseName = "initorder"
 
@@ -29,37 +29,66 @@ private[this] class Order(val global: Global)
       * Annotations inform about anything that can help spotting possible
       * initialization problems, e.g. which class members are used.
       */
-    override def transform(tree: Tree): Tree = {
-      tree match {
-        case classDef: ClassDef => annotate(classDef)
-        case _ =>
+    override def transform(tree: Tree): Tree = super.transform(tree) match {
+      case classDef: ClassDef => {
+        for {
+          (defDef, toAttach) ← infos(classDef)
+          method = defDef.symbol.asMethod
+          annotationInfo ← toAttach
+        } {
+          method.addAnnotation(annotationInfo)
+        }
+        classDef
       }
-      super.transform(tree)
+      case other => other
     }
 
-    /** Annotates methods with information about what happens in them. */
-    private[this] def annotate(classDef: ClassDef) = for {
-      method@ DefDef(_, _, _,  _, _, _) ← classDef.impl.body
-      m = method.symbol.asMethod
-      subtree ← method
-    } subtree match {
-      case AssignTree(s@ Select(This(_), _), _) =>
-        m.addAnnotation(info(Assign(s.symbol.asTerm, s.pos.point, s.pos.point)))
-      case Apply(s@ Select(This(_), _), _) if s.symbol.ne(null) => {
-        val instruction = if (s.symbol.isAccessor && s.symbol.isStable) {
-          Access(s.symbol.accessed.asTerm, s.pos.point, s.pos.point)
-        } else {
-          Invoke(s.symbol.asMethod, s.pos.point, s.pos.point)
-        }
-        m.addAnnotation(info(instruction))
-      }
-      case _ =>
+    /** @return a map from method definitions to annotations that should be
+      *         attached to them.
+      */
+    private[this] def infos(c: ClassDef): Map[DefDef, List[AnnotationInfo]] =
+      (for {
+        defDef@ DefDef(_, _, _,  _, _, _) ←  c.impl.body
+        method = defDef.symbol.asMethod
+        assign = assignments(defDef)
+        invoke = invocations(defDef)
+        assignmentContext: Map[Apply, Set[AssignTree]] =
+          assign.view
+                .flatMap(a => invocations(a).map(i => (i, a)))
+                .groupBy(_._1)
+                .mapValues(_.unzip._2.toSet)
+                .withDefaultValue(Set.empty)
+        assignAnnotations = for {
+          assignTree ← assign
+          point = assignTree.pos.point
+        } yield Assign(assignTree.lhs.symbol.asTerm, point, point)
+        invokeAnnotations = for {
+          apply ← invoke
+          context = assignmentContext(apply)
+          invoked = apply.symbol.asMethod
+          isAccess = invoked.isAccessor && invoked.isStable
+          annotation = if (isAccess) Access else Invoke
+          symbol = if (isAccess) invoked.accessed.asTerm else invoked
+          point = apply.pos.point
+          ordinal = (apply :: context.toList).minBy(_.pos.point).pos.point
+        } yield annotation(symbol, point, ordinal)
+        annotations = (assignAnnotations ::: invokeAnnotations).map(toInfo)
+      } yield defDef → annotations).toMap
+
+    /** @return trees that represent member assignments. */
+    private[this] def assignments(t: Tree): List[AssignTree] = t.collect {
+      case a@ AssignTree(Select(This(_), _), _) => a
+    }
+
+    /** @return trees that represent member method invocations. */
+    private[this] def invocations(t: Tree): List[Apply] = t.collect {
+      case a@ Apply(Select(This(_), _), _) if a.symbol.ne(null) => a
     }
 
     /** Converts regular annotation object to
       * [[scala.reflect.internal.AnnotationInfos#AnnotationInfo]].
       */
-    private[this] def info(annotation: Instruction): AnnotationInfo = {
+    private[this] def toInfo(annotation: Instruction): AnnotationInfo = {
       val name = newTypeName(annotation.getClass.getCanonicalName)
       val classSymbol = rootMirror.getClassByName(name)
       val args = annotation.productIterator.map(c => Literal(Constant(c)))
