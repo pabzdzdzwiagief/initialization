@@ -14,11 +14,17 @@ sealed abstract class Instruction extends Annotation with Product {
   /** Object that identifies relevant class member. */
   def member: AnyRef
 
+  /** Point in relevant source file. */
+  def point: Int
+
   /** For comparing with other annotations attached to the same symbol.
     * Instruction happens before those for which this value is greater.
     */
   def ordinal: Int
 }
-final case class Access(member: AnyRef, ordinal: Int) extends Instruction
-final case class Assign(member: AnyRef, ordinal: Int) extends Instruction
-final case class Invoke(member: AnyRef, ordinal: Int) extends Instruction
+final case class Access(member: AnyRef, point: Int, ordinal: Int)
+  extends Instruction
+final case class Assign(member: AnyRef, point: Int, ordinal: Int)
+  extends Instruction
+final case class Invoke(member: AnyRef, point: Int, ordinal: Int)
+  extends Instruction

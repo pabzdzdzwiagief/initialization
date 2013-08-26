@@ -44,12 +44,12 @@ private[this] class Order(val global: Global)
       subtree ← method
     } subtree match {
       case AssignTree(s@ Select(This(_), _), _) =>
-        m.addAnnotation(info(Assign(s.symbol.asTerm, s.pos.point)))
+        m.addAnnotation(info(Assign(s.symbol.asTerm, s.pos.point, s.pos.point)))
       case Apply(s@ Select(This(_), _), _) if s.symbol.ne(null) => {
         val instruction = if (s.symbol.isAccessor && s.symbol.isStable) {
-          Access(s.symbol.accessed.asTerm, s.pos.point)
+          Access(s.symbol.accessed.asTerm, s.pos.point, s.pos.point)
         } else {
-          Invoke(s.symbol.asMethod, s.pos.point)
+          Invoke(s.symbol.asMethod, s.pos.point, s.pos.point)
         }
         m.addAnnotation(info(instruction))
       }

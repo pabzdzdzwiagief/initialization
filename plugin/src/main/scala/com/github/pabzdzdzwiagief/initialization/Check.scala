@@ -29,14 +29,15 @@ private[this] class Check(val global: Global) extends PluginComponent {
     override def apply(unit: CompilationUnit) = for {
       classDef@ ClassDef(_, _, _, _) ← unit.body
       constructor = classDef.symbol.asClass.primaryConstructor.asMethod
+      startPoint = constructor.pos.point
       checker = ReferenceBeforeAssignmentChecker(environment)(_)
-      access :: tail ← checker(Invoke(constructor, constructor.pos.point))
+      access :: tail ← checker(Invoke(constructor, startPoint, startPoint))
       javaStackTrace = for {
-        Invoke(method: MethodSymbol, ordinal) ← tail
+        Invoke(method: MethodSymbol, point, ordinal) ← tail
         className = method.owner.fullName.toString
         methodName = method.name.toString
         fileName = method.sourceFile.name
-        line = position(method, ordinal).safeLine
+        line = position(method, point).safeLine
       } yield new StackTraceElement(className, methodName, fileName, line)
       lastMethod = tail.head.member.asInstanceOf[MethodSymbol]
       message = s"${access.member} is referenced before assignment"
@@ -48,7 +49,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
       import java.io.{PrintWriter, StringWriter}
       val stringWriter = new StringWriter
       fakeException.printStackTrace(new PrintWriter(stringWriter))
-      unit.warning(position(lastMethod, access.ordinal), stringWriter.toString)
+      unit.warning(position(lastMethod, access.point), stringWriter.toString)
     }
 
     private[this] def position(method: MethodSymbol, point: Int) =
@@ -60,7 +61,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
 
     def flatten(x: Instruction): Either[x.type, Stream[Instruction]] =
       x match {
-        case Invoke(m: MethodSymbol, _) => Right(invoke(m).toStream)
+        case Invoke(m: MethodSymbol, _, _) => Right(invoke(m).toStream)
         case _ => Left(x)
       }
 
@@ -79,7 +80,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
       })
 
     def conflict(x: Instruction, y: Instruction) = (x, y) match {
-      case (Access(v1, _), Assign(v2, _)) => v1 == v2
+      case (Access(v1, _, _), Assign(v2, _, _)) => v1 == v2
       case _ => false
     }
 
