@@ -4,12 +4,12 @@
 
 package com.github.pabzdzdzwiagief.initialization
 
+import java.io.{PrintWriter, StringWriter}
 import reflect.internal.util.BatchSourceFile
+import reflect.internal.util.OffsetPosition
 import tools.nsc.Global
 import tools.nsc.Phase
 import tools.nsc.plugins.PluginComponent
-
-import annotation._
 
 private[this] class Check(val global: Global) extends PluginComponent {
   import global.{ClassDef, CompilationUnit, Literal, MethodSymbol}
@@ -23,7 +23,6 @@ private[this] class Check(val global: Global) extends PluginComponent {
   final def newPhase(prev: Phase): Phase = new CheckerPhase(prev)
 
   private[this] class CheckerPhase(prev: Phase) extends StdPhase(prev) {
-    import reflect.internal.util.OffsetPosition
 
     /** Warns upon detection of any reference before assignment. */
     override def apply(unit: CompilationUnit) = for {
@@ -46,7 +45,6 @@ private[this] class Check(val global: Global) extends PluginComponent {
         setStackTrace(javaStackTrace.toArray)
       }
     } {
-      import java.io.{PrintWriter, StringWriter}
       val stringWriter = new StringWriter
       fakeException.printStackTrace(new PrintWriter(stringWriter))
       unit.warning(position(lastMethod, access.point), stringWriter.toString)
@@ -57,7 +55,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
   }
 
   private[this] object environment extends Environment {
-    type Instruction = annotation.Instruction
+    type Instruction = com.github.pabzdzdzwiagief.initialization.Instruction
 
     def flatten(x: Instruction): Either[x.type, Stream[Instruction]] =
       x match {

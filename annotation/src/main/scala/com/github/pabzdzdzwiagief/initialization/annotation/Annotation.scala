@@ -2,15 +2,13 @@
 // Use of this source code is governed by a BSD-style license
 // that can be found in the LICENSE file.
 
-package com.github.pabzdzdzwiagief.initialization.annotation
+package com.github.pabzdzdzwiagief.initialization
 
 import annotation.StaticAnnotation
 
-/** Annotation left by the Initialization plugin. */
-sealed abstract class Annotation extends StaticAnnotation
-
 /** Represents something that happens during initialization procedure. */
-sealed abstract class Instruction extends Annotation with Product {
+private[this] sealed abstract class Instruction
+  extends StaticAnnotation with Product {
   /** Object that identifies relevant class member. */
   def member: AnyRef
 
@@ -22,9 +20,9 @@ sealed abstract class Instruction extends Annotation with Product {
     */
   def ordinal: Int
 }
-final case class Access(member: AnyRef, point: Int, ordinal: Int)
+private[this] final case class Access(member: AnyRef, point: Int, ordinal: Int)
   extends Instruction
-final case class Assign(member: AnyRef, point: Int, ordinal: Int)
+private[this] final case class Assign(member: AnyRef, point: Int, ordinal: Int)
   extends Instruction
-final case class Invoke(member: AnyRef, point: Int, ordinal: Int)
+private[this] final case class Invoke(member: AnyRef, point: Int, ordinal: Int)
   extends Instruction

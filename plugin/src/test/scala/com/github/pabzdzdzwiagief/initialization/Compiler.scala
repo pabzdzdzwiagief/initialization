@@ -32,14 +32,14 @@ class Compiler(pluginClasses: Plugin.AnyClass*) extends (SourceFile => String) {
   }
 
   /** Output buffer for compiler reports. */
-  private val writer = new StringWriter
+  private[this] val writer = new StringWriter
 
   /** nsc compiler object with additional plugins. */
-  private val global = {
+  private[this] val global = {
     val settings = {
-      import annotation.{Annotation => ForAnnotations}
-      import runtime.{Boxed => ForScalaLibrary}
       import Class.forName
+      type ForAnnotations = Instruction
+      type ForScalaLibrary = runtime.Boxed
       def path(name: String) =
         forName(name).getProtectionDomain.getCodeSource.getLocation.getPath
       val value = new GenericRunnerSettings(e => throw new RuntimeException(e))

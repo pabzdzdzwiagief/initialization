@@ -8,8 +8,6 @@ import tools.nsc.Global
 import tools.nsc.plugins.PluginComponent
 import tools.nsc.transform.Transform
 
-import annotation._
-
 private[this] class Order(val global: Global)
   extends PluginComponent with Transform {
   import global.{CompilationUnit, Transformer}
