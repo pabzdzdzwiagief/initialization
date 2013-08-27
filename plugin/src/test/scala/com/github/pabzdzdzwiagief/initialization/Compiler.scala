@@ -25,10 +25,13 @@ class Compiler(pluginClasses: Plugin.AnyClass*) extends (SourceFile => String) {
     def tabsToEightSpaces(string: String) =
       string.replace("\t", "        ")
     val compilation = new global.Run
-    compilation.compileSources(List(source))
-    val output = writer.getBuffer.toString
-    writer.getBuffer.setLength(0)
-    tabsToEightSpaces(removeLastNewline(output))
+    try {
+      compilation.compileSources(List(source))
+      val output = writer.getBuffer.toString
+      tabsToEightSpaces(removeLastNewline(output))
+    } finally {
+      writer.getBuffer.setLength(0)
+    }
   }
 
   /** Output buffer for compiler reports. */
