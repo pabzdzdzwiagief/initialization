@@ -27,6 +27,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
     /** Warns upon detection of any reference before assignment. */
     override def apply(unit: CompilationUnit) = for {
       classDef@ ClassDef(_, _, _, _) ← unit.body
+      if classDef.symbol.asClass.primaryConstructor.exists
       constructor = classDef.symbol.asClass.primaryConstructor.asMethod
       startPoint = constructor.pos.point
       checker = ReferenceBeforeAssignmentChecker(environment)(_)
