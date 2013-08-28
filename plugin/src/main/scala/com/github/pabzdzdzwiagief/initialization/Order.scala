@@ -12,7 +12,7 @@ private[this] class Order(val global: Global)
   extends PluginComponent with Transform {
   import global.{CompilationUnit, Transformer}
   import global.{Tree, ClassDef, DefDef}
-  import global.{Select, This, Assign => AssignTree, Apply, Ident}
+  import global.{Select, This, Assign => AssignTree, Apply, Ident, Super}
   import global.{Literal, Constant}
   import global.{newTypeName, rootMirror, AnnotationInfo}
 
@@ -64,7 +64,8 @@ private[this] class Order(val global: Global)
           apply ← invocations(defDef)
           context = containers(apply)
           invoked = apply.symbol.asMethod
-          point = (if (invoked.isConstructor) invoked.pos else apply.pos).point
+          position = if (invoked.isConstructor) invoked.pos else apply.pos
+          point = position.pointOrElse(-1)
           ordinal = (apply :: context.toList).map(_.pos.point).min
         } yield Invoke(invoked, point, ordinal)
         assignAnnotations = for {
@@ -86,11 +87,13 @@ private[this] class Order(val global: Global)
     /** @return trees that represent member method invocations.
       *         Matches trees of form:
       *         - Class.this.method(...)
+      *         - Class.super.method(...)
       *         - Mixin.$init$(...)
       *         - $this.method(...), where $this is Mixin.$init$ parameter
       */
     private[this] def invocations(t: Tree): List[Apply] = t.collect {
       case a@ Apply(Select(This(_), _), _) => a
+      case a@ Apply(Select(Super(_, _), _), _) => a
       case a@ Apply(_, _) if a.symbol.isMixinConstructor => a
       case a@ Apply(Select(i: Ident, _), _)
         if i.hasSymbolWhich(_.owner.isMixinConstructor) => a

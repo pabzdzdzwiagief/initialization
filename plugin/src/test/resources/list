@@ -1,6 +1,9 @@
 /positives/inheritance.scala
 /positives/simple.scala
+/positives/superconstructor.scala
 /positives/trivial.scala
 /positives/traits.scala
+/negatives/inheritance.scala
 /negatives/simple.scala
+/negatives/superconstructor.scala
 /negatives/traits.scala
