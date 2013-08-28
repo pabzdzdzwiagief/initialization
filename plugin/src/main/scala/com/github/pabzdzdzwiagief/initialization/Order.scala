@@ -12,7 +12,8 @@ private[this] class Order(val global: Global)
   extends PluginComponent with Transform {
   import global.{CompilationUnit, Transformer}
   import global.{Tree, ClassDef, DefDef}
-  import global.{Select, This, Assign => AssignTree, Apply, Literal, Constant}
+  import global.{Select, This, Assign => AssignTree, Apply, Ident}
+  import global.{Literal, Constant}
   import global.{newTypeName, rootMirror, AnnotationInfo}
 
   final val phaseName = "initorder"
@@ -49,29 +50,30 @@ private[this] class Order(val global: Global)
         defDef@ DefDef(_, _, _,  _, _, _) ←  c.impl.body
         method = defDef.symbol.asMethod
         assign = assignments(defDef)
-        invoke = invocations(defDef)
-        assignmentContext: Map[Apply, Set[AssignTree]] =
+        containers: Map[Apply, Set[AssignTree]] =
           assign.view
                 .flatMap(a => invocations(a).map(i => (i, a)))
                 .groupBy(_._1)
                 .mapValues(_.unzip._2.toSet)
                 .withDefaultValue(Set.empty)
+        accessAnnotations = for {
+          access ← accesses(defDef)
+          point = access.pos.point
+        } yield Access(access.symbol.asTerm, point, point)
+        invokeAnnotations = for {
+          apply ← invocations(defDef)
+          context = containers(apply)
+          invoked = apply.symbol.asMethod
+          point = (if (invoked.isConstructor) invoked.pos else apply.pos).point
+          ordinal = (apply :: context.toList).map(_.pos.point).min
+        } yield Invoke(invoked, point, ordinal)
         assignAnnotations = for {
           assignTree ← assign
           point = assignTree.pos.point
         } yield Assign(assignTree.lhs.symbol.asTerm, point, point)
-        invokeAnnotations = for {
-          apply ← invoke
-          context = assignmentContext(apply)
-          invoked = apply.symbol.asMethod
-          isAccess = invoked.isAccessor && invoked.isStable
-          annotation = if (isAccess) Access else Invoke
-          symbol = if (isAccess) invoked.accessed.asTerm else invoked
-          point = apply.pos.point
-          ordinal = (apply :: context.toList).minBy(_.pos.point).pos.point
-        } yield annotation(symbol, point, ordinal)
-        annotations = (assignAnnotations ::: invokeAnnotations).map(toInfo)
-      } yield defDef → annotations).toMap
+        toAttach = accessAnnotations ::: invokeAnnotations ::: assignAnnotations
+        annotationInfos = toAttach.map(toInfo)
+      } yield defDef → annotationInfos).toMap
 
     /** @return trees that represent member assignments. */
     private[this] def assignments(t: Tree): List[AssignTree] = t.collect {
@@ -80,7 +82,18 @@ private[this] class Order(val global: Global)
 
     /** @return trees that represent member method invocations. */
     private[this] def invocations(t: Tree): List[Apply] = t.collect {
-      case a@ Apply(Select(This(_), _), _) if a.symbol.ne(null) => a
+      case a@ Apply(Select(This(_), _), _) => a
+      case a@ Apply(_, _) if a.symbol.isMixinConstructor => a
+      case a@ Apply(Select(i: Ident, _), _)
+        if i.hasSymbolWhich(_.owner.isMixinConstructor) => a
+    }
+
+    /** @return trees that represent member accesses. */
+    private[this] def accesses(t: DefDef): List[Select] = t match {
+      case d if d.symbol.isAccessor && d.symbol.isStable => d.collect {
+        case s@ Select(This(_), _) if s.symbol.isPrivateLocal => s
+      }
+      case _ => Nil
     }
 
     /** Converts regular annotation object to
@@ -94,3 +107,4 @@ private[this] class Order(val global: Global)
     }
   }
 }
+
