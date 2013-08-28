@@ -48,7 +48,6 @@ private[this] class Order(val global: Global)
     private[this] def infos(c: ClassDef): Map[DefDef, List[AnnotationInfo]] =
       (for {
         defDef@ DefDef(_, _, _,  _, _, _) ←  c.impl.body
-        method = defDef.symbol.asMethod
         ordinals = dfsTraverse(defDef).zipWithIndex.toMap
         accessAnnotations = for {
           access ← accesses(defDef)

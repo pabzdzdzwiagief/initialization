@@ -88,14 +88,21 @@ private[this] class Check(val global: Global) extends PluginComponent {
       * from annotations attached to it.
       */
     private[this] def invoke(method: MethodSymbol): Seq[Instruction] = for {
-      info ← method.overridingSymbol(inClass).orElse(method).annotations
+      info ← method.annotations
       annotationClass = Class.forName(info.atp.typeSymbol.fullName)
       if classOf[Instruction].isAssignableFrom(annotationClass)
       args = info.args.map(_.asInstanceOf[Literal].value.value)
       anyRefArgs = args.map(_.asInstanceOf[AnyRef]).toSeq
       constructors = annotationClass.getConstructors
       init ← constructors.find(_.getParameterTypes.length == anyRefArgs.length)
-    } yield init.newInstance(anyRefArgs: _*).asInstanceOf[Instruction]
+      instruction = init.newInstance(anyRefArgs: _*).asInstanceOf[Instruction]
+    } yield overrideOrSelf(instruction)
+
+    private[this] def overrideOrSelf(x: Instruction): Instruction = x match {
+      case i@ Invoke(m: MethodSymbol, _, _) =>
+        i.copy(member = m.overridingSymbol(inClass).orElse(m))
+      case notOverridden => notOverridden
+    }
   }
 }
 
