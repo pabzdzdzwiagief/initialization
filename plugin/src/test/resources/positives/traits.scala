@@ -15,9 +15,9 @@ trait second {
 }
 
 // traits.scala:14: warning: value x is referenced before assignment
-//         at localhost.second$class./*second$class*/$init$(traits.scala:11)
+//         at localhost.second$class.$init$(traits.scala:11)
 //         at localhost.traits.<init>(traits.scala:5)
 //
-//     println(x)
-//             ^
+//   println(x)
+//           ^
 

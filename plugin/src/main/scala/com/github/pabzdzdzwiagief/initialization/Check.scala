@@ -12,7 +12,7 @@ import tools.nsc.Phase
 import tools.nsc.plugins.PluginComponent
 
 private[this] class Check(val global: Global) extends PluginComponent {
-  import global.{ClassDef, CompilationUnit, Literal, MethodSymbol}
+  import global.{ClassDef, CompilationUnit, Literal, MethodSymbol, ClassSymbol}
   import ReferenceBeforeAssignmentChecker.Environment
 
   final val phaseName = "initcheck"
@@ -27,35 +27,36 @@ private[this] class Check(val global: Global) extends PluginComponent {
     /** Warns upon detection of any reference before assignment. */
     override def apply(unit: CompilationUnit) = for {
       classDef@ ClassDef(_, _, _, _) ← unit.body
-      if classDef.symbol.asClass.primaryConstructor.exists
-      constructor = classDef.symbol.asClass.primaryConstructor.asMethod
-      startPoint = constructor.pos.point
-      checker = ReferenceBeforeAssignmentChecker(environment)(_)
-      access :: tail ← checker(Invoke(constructor, startPoint, startPoint))
+      classSymbol = classDef.symbol.asClass
+      if classSymbol.primaryConstructor.exists
+      constructor = classSymbol.primaryConstructor.asMethod
+      start = constructor.pos.point
+      checker = ReferenceBeforeAssignmentChecker(new Context(classSymbol))(_)
+      _ :: accessor :: last :: tail ← checker(Invoke(constructor, start, start))
       javaStackTrace = for {
-        Invoke(method: MethodSymbol, point, ordinal) ← tail
+        Invoke(method: MethodSymbol, point, ordinal) ← last :: tail
         className = method.owner.fullName.toString
         methodName = method.name.toString
         fileName = method.sourceFile.name
         line = position(method, point).safeLine
       } yield new StackTraceElement(className, methodName, fileName, line)
-      lastMethod = tail.head.member.asInstanceOf[MethodSymbol]
-      message = s"${access.member} is referenced before assignment"
-      fakeException = new Exception {
+      lastMethod = last.member.asInstanceOf[MethodSymbol]
+      message = s"${accessor.member} is referenced before assignment"
+      exceptionImitation = new Exception {
         override def toString = message
         setStackTrace(javaStackTrace.toArray)
       }
     } {
       val stringWriter = new StringWriter
-      fakeException.printStackTrace(new PrintWriter(stringWriter))
-      unit.warning(position(lastMethod, access.point), stringWriter.toString)
+      exceptionImitation.printStackTrace(new PrintWriter(stringWriter))
+      unit.warning(position(lastMethod, accessor.point), stringWriter.toString)
     }
 
     private[this] def position(method: MethodSymbol, point: Int) =
       new OffsetPosition(new BatchSourceFile(method.sourceFile), point)
   }
 
-  private[this] object environment extends Environment {
+  private[this] class Context(inClass: ClassSymbol) extends Environment {
     type Instruction = com.github.pabzdzdzwiagief.initialization.Instruction
 
     def flatten(x: Instruction): Either[x.type, Stream[Instruction]] =
@@ -66,15 +67,15 @@ private[this] class Check(val global: Global) extends PluginComponent {
 
     def lessThan(x: Instruction, y: Instruction) =
       x.ordinal < y.ordinal || x.ordinal == y.ordinal && (x match {
-        case assign: Assign => false
+        case assign: Assign => true
         case invoke: Invoke => y match {
-          case a: Access => true
-          case _ => false
+          case a: Access => false
+          case _ => true
         }
         case access: Access => y match {
-          case a: Assign => true
-          case i: Invoke => true
-          case _ => false
+          case a: Assign => false
+          case i: Invoke => false
+          case _ => true
         }
       })
 
@@ -87,7 +88,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
       * from annotations attached to it.
       */
     private[this] def invoke(method: MethodSymbol): Seq[Instruction] = for {
-      info ← method.annotations
+      info ← method.overridingSymbol(inClass).orElse(method).annotations
       annotationClass = Class.forName(info.atp.typeSymbol.fullName)
       if classOf[Instruction].isAssignableFrom(annotationClass)
       args = info.args.map(_.asInstanceOf[Literal].value.value)
