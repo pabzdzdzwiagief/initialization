@@ -36,6 +36,7 @@ private[this] object ReferenceBeforeAssignmentChecker {
       case Left(_) => Stream(x)
       case Right(newInstructions) => for {
         instruction ← newInstructions.sortWith(env.lessThan(_, _))
+        if !x.contains(instruction)
         inflattenable ← flattenClosure(instruction :: x)
       } yield inflattenable
     }
