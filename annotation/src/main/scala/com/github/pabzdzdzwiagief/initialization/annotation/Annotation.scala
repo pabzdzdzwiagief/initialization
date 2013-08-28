@@ -24,5 +24,7 @@ private[this] final case class Access(member: AnyRef, point: Int, ordinal: Int)
   extends Instruction
 private[this] final case class Assign(member: AnyRef, point: Int, ordinal: Int)
   extends Instruction
-private[this] final case class Invoke(member: AnyRef, point: Int, ordinal: Int)
+private[this] sealed case class Invoke(member: AnyRef, point: Int, ordinal: Int)
   extends Instruction
+private[this] final class Special(member: AnyRef, point: Int, ordinal: Int)
+  extends Invoke(member, point, ordinal)

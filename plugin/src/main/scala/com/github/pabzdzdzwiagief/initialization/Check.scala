@@ -12,7 +12,8 @@ import tools.nsc.Phase
 import tools.nsc.plugins.PluginComponent
 
 private[this] class Check(val global: Global) extends PluginComponent {
-  import global.{ClassDef, CompilationUnit, Literal, MethodSymbol, ClassSymbol}
+  import global.{ClassDef, CompilationUnit, Literal}
+  import global.{MethodSymbol, ClassSymbol}
   import ReferenceBeforeAssignmentChecker.Environment
 
   final val phaseName = "initcheck"
@@ -34,7 +35,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
       checker = ReferenceBeforeAssignmentChecker(new Context(classSymbol))(_)
       _ :: accessor :: last :: tail ← checker(Invoke(constructor, start, start))
       javaStackTrace = for {
-        Invoke(method: MethodSymbol, point, ordinal) ← last :: tail
+        Invoke(method: MethodSymbol, point, _) ← last :: tail
         className = method.owner.fullName.toString
         methodName = method.name.toString
         fileName = method.sourceFile.name
@@ -99,6 +100,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
     } yield overrideOrSelf(instruction)
 
     private[this] def overrideOrSelf(x: Instruction): Instruction = x match {
+      case notOverridable: Special => notOverridable
       case i@ Invoke(m: MethodSymbol, _, _) =>
         i.copy(member = m.overridingSymbol(inClass).orElse(m))
       case notOverridden => notOverridden

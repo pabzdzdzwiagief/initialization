@@ -19,9 +19,10 @@ abstract class base {
   }
 }
 
-// simple.scala:10: warning: value v1 is referenced before assignment
-//         at localhost.simple.m1(simple.scala:6)
-//         at localhost.simple.<init>(simple.scala:5)
+// supermethod.scala:18: warning: value v1 is referenced before assignment
+//         at localhost.base.m1(supermethod.scala:10)
+//         at localhost.supermethod.m1(supermethod.scala:6)
+//         at localhost.supermethod.<init>(supermethod.scala:5)
 //
 //     println(v1)
 //             ^

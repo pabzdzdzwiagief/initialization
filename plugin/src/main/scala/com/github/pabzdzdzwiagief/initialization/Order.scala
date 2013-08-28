@@ -49,21 +49,26 @@ private[this] class Order(val global: Global)
       (for {
         defDef@ DefDef(_, _, _,  _, _, _) ←  c.impl.body
         ordinals = dfsTraverse(defDef).zipWithIndex.toMap
-        accessAnnotations = for {
-          access ← accesses(defDef)
-          point = access.pos.point
-        } yield Access(access.symbol.asTerm, point, ordinals(access))
-        invokeAnnotations = for {
-          apply ← invocations(defDef)
-          invoked = apply.symbol.asMethod
-          position = if (invoked.isConstructor) invoked.pos else apply.pos
+        access = for {
+          tree ← accesses(defDef)
+          point = tree.pos.point
+        } yield Access(tree.symbol.asTerm, point, ordinals(tree))
+        invoke = for {
+          tree ← invocations(defDef)
+          invoked = tree.symbol.asMethod
+          point = tree.pos.point
+        } yield Invoke(invoked, point, ordinals(tree))
+        special = for {
+          tree ← specials(defDef)
+          invoked = tree.symbol.asMethod
+          position = if (invoked.isConstructor) invoked.pos else tree.pos
           point = position.pointOrElse(-1)
-        } yield Invoke(invoked, point, ordinals(apply))
-        assignAnnotations = for {
-          assign ← assignments(defDef)
-          point = assign.pos.point
-        } yield Assign(assign.lhs.symbol.asTerm, point, ordinals(assign))
-        toAttach = accessAnnotations ::: invokeAnnotations ::: assignAnnotations
+        } yield new Special(invoked, point, ordinals(tree))
+        assign = for {
+          tree ← assignments(defDef)
+          point = tree.pos.point
+        } yield Assign(tree.lhs.symbol.asTerm, point, ordinals(tree))
+        toAttach = access ::: invoke ::: special ::: assign
         annotationInfos = toAttach.map(toInfo)
       } yield defDef → annotationInfos).toMap
 
@@ -86,16 +91,22 @@ private[this] class Order(val global: Global)
     /** @return trees that represent member method invocations.
       *         Matches trees of form:
       *         - Class.this.method(...)
-      *         - Class.super.method(...)
-      *         - Mixin.$init$(...)
       *         - $this.method(...), where $this is Mixin.$init$ parameter
       */
     private[this] def invocations(t: Tree): List[Apply] = t.collect {
       case a@ Apply(Select(This(_), _), _) => a
-      case a@ Apply(Select(Super(_, _), _), _) => a
-      case a@ Apply(_, _) if a.symbol.isMixinConstructor => a
       case a@ Apply(Select(i: Ident, _), _)
         if i.hasSymbolWhich(_.owner.isMixinConstructor) => a
+    }
+
+     /** @return trees that represent special member method invocations.
+       *         Matches trees of form:
+       *        - Class.super.method(...)
+       *        - Mixin.$init$(...)
+       */
+    private[this] def specials(t: Tree): List[Apply] = t.collect {
+      case a@ Apply(Select(Super(_, _), _), _) => a
+      case a@ Apply(_, _) if a.symbol.isMixinConstructor => a
     }
 
     /** @return trees that represent member accesses.
