@@ -75,12 +75,20 @@ private[this] class Order(val global: Global)
         annotationInfos = toAttach.map(toInfo)
       } yield defDef → annotationInfos).toMap
 
-    /** @return trees that represent member assignments. */
+    /** @return trees that represent member assignments.
+      *         Matches trees of form:
+      *         - Class.this.field = ...
+      */
     private[this] def assignments(t: Tree): List[AssignTree] = t.collect {
       case a@ AssignTree(Select(This(_), _), _) => a
     }
 
-    /** @return trees that represent member method invocations. */
+    /** @return trees that represent member method invocations.
+      *         Matches trees of form:
+      *         - Class.this.method(...)
+      *         - Mixin.$init$(...)
+      *         - $this.method(...), where $this is Mixin.$init$ parameter
+      */
     private[this] def invocations(t: Tree): List[Apply] = t.collect {
       case a@ Apply(Select(This(_), _), _) => a
       case a@ Apply(_, _) if a.symbol.isMixinConstructor => a
@@ -88,7 +96,10 @@ private[this] class Order(val global: Global)
         if i.hasSymbolWhich(_.owner.isMixinConstructor) => a
     }
 
-    /** @return trees that represent member accesses. */
+    /** @return trees that represent member accesses.
+      *         Matches trees of form:
+      *         - Class.this.field, inside stable member accessor def
+      */
     private[this] def accesses(t: DefDef): List[Select] = t match {
       case d if d.symbol.isAccessor && d.symbol.isStable => d.collect {
         case s@ Select(This(_), _) if s.symbol.isPrivateLocal => s
