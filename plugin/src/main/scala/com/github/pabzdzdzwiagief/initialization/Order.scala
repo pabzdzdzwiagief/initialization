@@ -81,7 +81,7 @@ private[this] class Order(val global: Global)
       *         - Class.this.field = ...
       */
     private[this] def assignments(t: Tree): List[AssignTree] = t.collect {
-      case a@ AssignTree(Select(This(_), _), _) => a
+      case a@ AssignTree(s@ Select(This(_), _), _) if !s.symbol.isMutable => a
     }
 
     /** @return trees that represent member method invocations.
