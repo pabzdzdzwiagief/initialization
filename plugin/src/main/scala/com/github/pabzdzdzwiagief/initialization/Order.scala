@@ -49,32 +49,32 @@ private[this] class Order(val global: Global)
       (for {
         defDef@ DefDef(_, _, _,  _, _, _) ←  c.impl.body
         method = defDef.symbol.asMethod
-        assign = assignments(defDef)
-        containers: Map[Apply, Set[AssignTree]] =
-          assign.view
-                .flatMap(a => invocations(a).map(i => (i, a)))
-                .groupBy(_._1)
-                .mapValues(_.unzip._2.toSet)
-                .withDefaultValue(Set.empty)
+        ordinals = dfsTraverse(defDef).zipWithIndex.toMap
         accessAnnotations = for {
           access ← accesses(defDef)
           point = access.pos.point
-        } yield Access(access.symbol.asTerm, point, point)
+        } yield Access(access.symbol.asTerm, point, ordinals(access))
         invokeAnnotations = for {
           apply ← invocations(defDef)
-          context = containers(apply)
           invoked = apply.symbol.asMethod
           position = if (invoked.isConstructor) invoked.pos else apply.pos
           point = position.pointOrElse(-1)
-          ordinal = (apply :: context.toList).map(_.pos.point).min
-        } yield Invoke(invoked, point, ordinal)
+        } yield Invoke(invoked, point, ordinals(apply))
         assignAnnotations = for {
-          assignTree ← assign
-          point = assignTree.pos.point
-        } yield Assign(assignTree.lhs.symbol.asTerm, point, point)
+          assign ← assignments(defDef)
+          point = assign.pos.point
+        } yield Assign(assign.lhs.symbol.asTerm, point, ordinals(assign))
         toAttach = accessAnnotations ::: invokeAnnotations ::: assignAnnotations
         annotationInfos = toAttach.map(toInfo)
       } yield defDef → annotationInfos).toMap
+
+    /** @return trace of depth-first tree traversal. */
+    private[this] def dfsTraverse(t: Tree): List[Tree] = t match {
+      case a@ AssignTree(Select(This(_), _), _) =>
+        a.children.flatMap(dfsTraverse) ::: List(a)
+      case notAssignment =>
+        notAssignment :: notAssignment.children.flatMap(dfsTraverse)
+    }
 
     /** @return trees that represent member assignments.
       *         Matches trees of form:
