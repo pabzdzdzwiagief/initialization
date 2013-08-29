@@ -72,12 +72,18 @@ private[this] class Order(val global: Global)
         annotationInfos = toAttach.map(toInfo)
       } yield defDef → annotationInfos).toMap
 
-    /** @return trace of depth-first tree traversal. */
-    private[this] def dfsTraverse(t: Tree): List[Tree] = t match {
+    /** Works like [[scala.reflect.internal.Trees#Tree.children]], but puts
+      * assignments after their subtrees.
+      *
+      * @return trace of depth-first tree traversal.
+      */
+    private[this] def dfsTraverse(t: Any): List[Tree] = t match {
       case a@ AssignTree(Select(This(_), _), _) =>
-        a.children.flatMap(dfsTraverse) ::: List(a)
-      case notAssignment =>
-        notAssignment :: notAssignment.children.flatMap(dfsTraverse)
+        a.productIterator.toList.flatMap(dfsTraverse) ::: List(a)
+      case tree: Tree =>
+        tree :: tree.productIterator.toList.flatMap(dfsTraverse)
+      case list: List[_] => list.flatMap(dfsTraverse)
+      case _ => Nil
     }
 
     /** @return trees that represent member assignments.
