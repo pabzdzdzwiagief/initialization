@@ -9,3 +9,5 @@
 /negatives/simple.scala
 /negatives/superconstructor.scala
 /negatives/traits.scala
+/negatives/unchecked.scala
+

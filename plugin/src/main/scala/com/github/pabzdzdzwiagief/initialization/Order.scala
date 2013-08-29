@@ -13,8 +13,10 @@ private[this] class Order(val global: Global)
   import global.{CompilationUnit, Transformer}
   import global.{Tree, ClassDef, DefDef}
   import global.{Select, This, Assign => AssignTree, Apply, Ident, Super}
+  import global.{Typed, TypeTree, Annotated, AnnotatedType}
   import global.{Literal, Constant}
   import global.{newTypeName, rootMirror, AnnotationInfo}
+  import global.definitions.UncheckedClass.{tpe => uncheckedType}
 
   final val phaseName = "initorder"
 
@@ -49,23 +51,27 @@ private[this] class Order(val global: Global)
       (for {
         defDef@ DefDef(_, _, _,  _, _, _) ←  c.impl.body
         ordinals = dfsTraverse(defDef).zipWithIndex.toMap
+        shouldCheck = (for {
+          Typed(expression, _) ← unchecks(defDef)
+          child ← expression :: expression.children
+        } yield child).toSet.andThen(!_)
         access = for {
-          tree ← accesses(defDef)
+          tree ← accesses(defDef) if shouldCheck(tree)
           point = tree.pos.point
         } yield Access(tree.symbol.asTerm, point, ordinals(tree))
         invoke = for {
-          tree ← invocations(defDef)
+          tree ← invocations(defDef) if shouldCheck(tree)
           invoked = tree.symbol.asMethod
           point = tree.pos.point
         } yield Invoke(invoked, point, ordinals(tree))
         special = for {
-          tree ← specials(defDef)
+          tree ← specials(defDef) if shouldCheck(tree)
           invoked = tree.symbol.asMethod
           position = if (invoked.isConstructor) invoked.pos else tree.pos
           point = position.pointOrElse(-1)
         } yield new Special(invoked, point, ordinals(tree))
         assign = for {
-          tree ← assignments(defDef)
+          tree ← assignments(defDef) if shouldCheck(tree)
           point = tree.pos.point
         } yield Assign(tree.lhs.symbol.asTerm, point, ordinals(tree))
         toAttach = access ::: invoke ::: special ::: assign
@@ -84,6 +90,20 @@ private[this] class Order(val global: Global)
         tree :: tree.productIterator.toList.flatMap(dfsTraverse)
       case list: List[_] => list.flatMap(dfsTraverse)
       case _ => Nil
+    }
+
+    /** @return trees that represent member accesses.
+      *         Matches trees of form:
+      *         - (expr: @uncheckedInitialization)
+      */
+    private[this] def unchecks(t: DefDef): List[Typed] = t.collect {
+      case t@ Typed(_, tpt: TypeTree) if (tpt.original match {
+        case a: Annotated => a.tpe match {
+          case AnnotatedType(i, _, _) => i.exists(_.tpe <:< uncheckedType)
+          case _ => false
+        }
+        case _ => false
+      }) => t
     }
 
     /** @return trees that represent member assignments.
