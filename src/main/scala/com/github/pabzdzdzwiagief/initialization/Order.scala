@@ -18,14 +18,12 @@ private[this] class Order(val global: Global)
   import global.{newTypeName, rootMirror, AnnotationInfo}
   import global.definitions.UncheckedClass.{tpe => uncheckedType}
 
-  final val phaseName = "initorder"
+  override final val phaseName = "initorder"
 
   /** Runs after AST becomes as simple as it can get. */
-  final val runsAfter = List("cleanup")
+  override final val runsAfter = List("cleanup")
 
-  final def newTransformer(unit: CompilationUnit): Transformer = annotator
-
-  private[this] val annotator: Transformer = new Transformer {
+  override final def newTransformer(unit: CompilationUnit) = new Transformer {
     /** Annotates methods of every class.
       * Annotations inform about anything that can help spotting possible
       * initialization problems, e.g. which class members are used.

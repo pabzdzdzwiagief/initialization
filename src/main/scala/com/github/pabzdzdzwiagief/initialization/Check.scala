@@ -16,14 +16,12 @@ private[this] class Check(val global: Global) extends PluginComponent {
   import global.{MethodSymbol, ClassSymbol}
   import ReferenceBeforeAssignmentChecker.Environment
 
-  final val phaseName = "initcheck"
+  override final val phaseName = "initcheck"
 
   /** Needs annotations left during `initorder` phase. */
-  final val runsAfter = List("initorder")
+  override final val runsAfter = List("initorder")
 
-  final def newPhase(prev: Phase): Phase = new CheckerPhase(prev)
-
-  private[this] class CheckerPhase(prev: Phase) extends StdPhase(prev) {
+  override final def newPhase(prev: Phase) = new StdPhase(prev) {
     /** Warns upon detection of any reference before assignment. */
     override def apply(unit: CompilationUnit) = for {
       classDef@ ClassDef(_, _, _, _) ← unit.body
