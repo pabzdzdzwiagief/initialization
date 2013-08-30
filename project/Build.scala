@@ -7,7 +7,7 @@ import Keys._
 
 object Build extends sbt.Build {
   val common = Defaults.defaultSettings ++ Seq (
-    version       := "0.9.0",
+    version       := "0.10.0",
     scalaVersion  := "2.10.2",
     scalacOptions := Seq(
       "-deprecation",
@@ -36,10 +36,11 @@ object Build extends sbt.Build {
       name := "initialization",
       description := "scalac plugin for initialization order checking",
       organization := "com.github.pabzdzdzwiagief",
-      libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.10.2",
+      libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
       libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test"
     )
-  ) dependsOn(annotation)
+  )
+  
 
   lazy val annotation = Project(
     id = "annotation",
@@ -49,5 +50,7 @@ object Build extends sbt.Build {
       description := "library dependencies for projects using the `initialization` plugin",
       organization := "com.github.pabzdzdzwiagief.initialization"
     )
-  )
+  ) dependsOn(plugin) /* FIXME: Of course dependence goes the other way
+                         around, but then annotations are missing on the
+                         bootclasspath. */
 }

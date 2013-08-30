@@ -1,22 +1,28 @@
 initialization
 ==============
 
-Scala compiler plugin checking if compiled code may run into
+A Scala compiler plugin. Detects code that may run into
 any of several Scala's initialization order
 [pitfalls](https://github.com/paulp/scala-faq/wiki/Initialization-Order).
-This plugin does not pretend to prevent every
-reference-before-initialization. Still, at least some classes of such
-errors can be covered.
+It does not pretend to prevent every reference-before-initialization.
+Still, at least some classes of such errors can be covered.
 
 The difference between this and `-Xcheckinit` compiler switch is that
-plugin's initialization checks are performed purely during compilation
-time. There are no costs incurred at runtime, although a small library
-dependency is brought for necessary metadata.
+checks are done purely during compilation time. There are no costs
+incurred at runtime, although a small library dependency is brought for
+necessary metadata.
 
-compilation
------------
+usage
+-----
 
-     sbt package
+Download the source and run `sbt install`.
+Then add this to your `build.sbt`:
+
+     autoCompilerPlugins := true
+
+     addCompilerPlugin("com.github.pabzdzdzwiagief" %% "initialization" % "0.10.0")
+
+     libraryDependencies += "com.github.pabzdzdzwiagief.initialization" %% "annotation" % "0.10.0"
 
 example
 -------
