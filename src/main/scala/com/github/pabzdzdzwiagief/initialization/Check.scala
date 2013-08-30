@@ -24,7 +24,6 @@ private[this] class Check(val global: Global) extends PluginComponent {
   final def newPhase(prev: Phase): Phase = new CheckerPhase(prev)
 
   private[this] class CheckerPhase(prev: Phase) extends StdPhase(prev) {
-
     /** Warns upon detection of any reference before assignment. */
     override def apply(unit: CompilationUnit) = for {
       classDef@ ClassDef(_, _, _, _) ← unit.body
@@ -60,25 +59,12 @@ private[this] class Check(val global: Global) extends PluginComponent {
   private[this] class Context(inClass: ClassSymbol) extends Environment {
     type Instruction = Trace
 
-    def flatten(x: Instruction): Either[x.type, Stream[Instruction]] =
-      x match {
-        case Invoke(m: MethodSymbol, _, _) => Right(follow(m).toStream)
-        case _ => Left(x)
-      }
+    def flatten(x: Instruction): Either[x.type, Stream[Instruction]] = x match {
+      case Invoke(m: MethodSymbol, _, _) => Right(follow(m).toStream)
+      case _ => Left(x)
+    }
 
-    def lessThan(x: Instruction, y: Instruction) =
-      x.ordinal < y.ordinal || x.ordinal == y.ordinal && (x match {
-        case assign: Assign => true
-        case invoke: Invoke => y match {
-          case a: Access => false
-          case _ => true
-        }
-        case access: Access => y match {
-          case a: Assign => false
-          case i: Invoke => false
-          case _ => true
-        }
-      })
+    def lessThan(x: Instruction, y: Instruction) = x.ordinal < y.ordinal
 
     def conflict(x: Instruction, y: Instruction) = (x, y) match {
       case (Access(v1, _, _), Assign(v2, _, _)) => v1 == v2
