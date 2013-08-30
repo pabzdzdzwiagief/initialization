@@ -149,7 +149,7 @@ private[this] class Order(val global: Global)
     /** Converts regular annotation object to
       * [[scala.reflect.internal.AnnotationInfos#AnnotationInfo]].
       */
-    private[this] def toInfo(annotation: Instruction): AnnotationInfo = {
+    private[this] def toInfo(annotation: Trace): AnnotationInfo = {
       val name = newTypeName(annotation.getClass.getCanonicalName)
       val classSymbol = rootMirror.getClassByName(name)
       val args = annotation.productIterator.map(c => Literal(Constant(c)))
@@ -157,4 +157,3 @@ private[this] class Order(val global: Global)
     }
   }
 }
-

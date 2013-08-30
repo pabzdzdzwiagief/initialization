@@ -41,7 +41,7 @@ class Compiler(pluginClasses: Plugin.AnyClass*) extends (SourceFile => String) {
   private[this] val global = {
     val settings = {
       import Class.forName
-      type ForAnnotations = Instruction
+      type ForAnnotations = Trace
       type ForScalaLibrary = runtime.Boxed
       def path(name: String) =
         forName(name).getProtectionDomain.getCodeSource.getLocation.getPath

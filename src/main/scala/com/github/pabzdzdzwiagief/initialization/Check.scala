@@ -58,11 +58,11 @@ private[this] class Check(val global: Global) extends PluginComponent {
   }
 
   private[this] class Context(inClass: ClassSymbol) extends Environment {
-    type Instruction = com.github.pabzdzdzwiagief.initialization.Instruction
+    type Instruction = Trace
 
     def flatten(x: Instruction): Either[x.type, Stream[Instruction]] =
       x match {
-        case Invoke(m: MethodSymbol, _, _) => Right(invoke(m).toStream)
+        case Invoke(m: MethodSymbol, _, _) => Right(follow(m).toStream)
         case _ => Left(x)
       }
 
@@ -88,18 +88,18 @@ private[this] class Check(val global: Global) extends PluginComponent {
     /** Loads information about instructions executed in given method
       * from annotations attached to it.
       */
-    private[this] def invoke(method: MethodSymbol): Seq[Instruction] = for {
+    private[this] def follow(method: MethodSymbol): Seq[Trace] = for {
       info ← method.annotations
       annotationClass = Class.forName(info.atp.typeSymbol.fullName)
-      if classOf[Instruction].isAssignableFrom(annotationClass)
+      if classOf[Trace].isAssignableFrom(annotationClass)
       args = info.args.map(_.asInstanceOf[Literal].value.value)
       anyRefArgs = args.map(_.asInstanceOf[AnyRef]).toSeq
       constructors = annotationClass.getConstructors
       init ← constructors.find(_.getParameterTypes.length == anyRefArgs.length)
-      instruction = init.newInstance(anyRefArgs: _*).asInstanceOf[Instruction]
+      instruction = init.newInstance(anyRefArgs: _*).asInstanceOf[Trace]
     } yield overrideOrSelf(instruction)
 
-    private[this] def overrideOrSelf(x: Instruction): Instruction = x match {
+    private[this] def overrideOrSelf(x: Trace): Trace = x match {
       case notOverridable: Special => notOverridable
       case i@ Invoke(m: MethodSymbol, _, _) =>
         i.copy(member = m.overridingSymbol(inClass).orElse(m))
@@ -107,5 +107,3 @@ private[this] class Check(val global: Global) extends PluginComponent {
     }
   }
 }
-
-

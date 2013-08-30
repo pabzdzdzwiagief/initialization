@@ -7,7 +7,7 @@ package com.github.pabzdzdzwiagief.initialization
 import annotation.StaticAnnotation
 
 /** Represents something that happens during initialization procedure. */
-private[this] sealed abstract class Instruction
+private[this] sealed abstract class Trace
   extends StaticAnnotation with Product {
   /** Object that identifies relevant class member. */
   def member: AnyRef
@@ -21,10 +21,10 @@ private[this] sealed abstract class Instruction
   def ordinal: Int
 }
 private[this] final case class Access(member: AnyRef, point: Int, ordinal: Int)
-  extends Instruction
+  extends Trace
 private[this] final case class Assign(member: AnyRef, point: Int, ordinal: Int)
-  extends Instruction
+  extends Trace
 private[this] sealed case class Invoke(member: AnyRef, point: Int, ordinal: Int)
-  extends Instruction
+  extends Trace
 private[this] final class Special(member: AnyRef, point: Int, ordinal: Int)
   extends Invoke(member, point, ordinal)
