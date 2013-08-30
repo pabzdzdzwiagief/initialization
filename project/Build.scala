@@ -7,11 +7,11 @@ import Keys._
 
 object Build extends sbt.Build {
   val common = Defaults.defaultSettings ++ Seq (
-    version       := "0.7.0",
+    version       := "0.8.0",
     scalaVersion  := "2.10.2",
     scalacOptions := Seq(
       "-deprecation",
-      "–unchecked",
+      "-unchecked",
       "-feature"
     ),
     startYear     := Some(2013),
@@ -29,23 +29,13 @@ object Build extends sbt.Build {
     )
   )
 
-  lazy val root = Project(
-    id = "root",
+  lazy val plugin = Project(
+    id = "initialization",
     base = file("."),
     settings = common ++ Seq(
       name := "initialization",
       description := "scalac plugin for initialization order checking",
-      organization := "com.github.pabzdzdzwiagief.initialization"
-    )
-  ) aggregate (plugin, annotation)
-
-  lazy val plugin = Project(
-    id = "plugin",
-    base = file("plugin"),
-    settings = common ++ Seq(
-      name := "plugin",
-      description := "the `initialization` plugin itself",
-      organization := "com.github.pabzdzdzwiagief.initialization.plugin",
+      organization := "com.github.pabzdzdzwiagief",
       libraryDependencies += "org.scala-lang" % "scala-compiler" % "2.10.2",
       libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test"
     )
@@ -55,9 +45,9 @@ object Build extends sbt.Build {
     id = "annotation",
     base = file("annotation"),
     settings = common ++ Seq(
-      name := "annotations",
+      name := "annotation",
       description := "library dependencies for projects using the `initialization` plugin",
-      organization := "com.github.pabzdzdzwiagief.initialization.annotations"
+      organization := "com.github.pabzdzdzwiagief.initialization"
     )
   )
 }
