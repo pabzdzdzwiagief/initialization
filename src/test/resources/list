@@ -1,4 +1,6 @@
+/positives/default.scala
 /positives/inheritance.scala
+/positives/overload.scala
 /positives/overrides.scala
 /positives/simple.scala
 /positives/superconstructor.scala
@@ -10,4 +12,3 @@
 /negatives/superconstructor.scala
 /negatives/traits.scala
 /negatives/unchecked.scala
-
