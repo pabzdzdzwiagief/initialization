@@ -1,5 +1,8 @@
+/positives/closure.scala
 /positives/default.scala
+/positives/foreach.scala
 /positives/inheritance.scala
+/positives/inner.scala
 /positives/overload.scala
 /positives/overrides.scala
 /positives/simple.scala
