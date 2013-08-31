@@ -1,4 +1,4 @@
-// *ignore* Access from an inner class
+// *not implemented* Access from an inner class
 
 package localhost
 

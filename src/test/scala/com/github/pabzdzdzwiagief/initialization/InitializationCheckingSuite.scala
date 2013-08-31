@@ -15,7 +15,7 @@ import org.scalatest.BeforeAndAfter
 class InitializationCheckingSuite extends FunSuite with BeforeAndAfter {
   for (fileName <- testFileNames) {
     val title = s"${readTitle(fileName)} in $fileName"
-    val ignorePrefix = "*ignore* "
+    val ignorePrefix = "*not implemented* "
     val testOrIgnore = if (title.startsWith(ignorePrefix)) {
       ignore(title.substring(ignorePrefix.length)) _
     } else {

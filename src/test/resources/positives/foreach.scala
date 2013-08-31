@@ -1,4 +1,4 @@
-// *ignore* Access inside `for` loop
+// *not implemented* Access inside `for` loop
 
 package localhost
 

@@ -1,4 +1,4 @@
-// *ignore* Access from a closure
+// *not implemented* Access from a closure
 
 package localhost
 
