@@ -20,9 +20,9 @@ Then add this to your `build.sbt`:
 
      autoCompilerPlugins := true
 
-     addCompilerPlugin("com.github.pabzdzdzwiagief" %% "initialization" % "0.10.0")
+     addCompilerPlugin("com.github.pabzdzdzwiagief" %% "initialization" % "0.10.1")
 
-     libraryDependencies += "com.github.pabzdzdzwiagief.initialization" %% "annotation" % "0.10.0"
+     libraryDependencies += "com.github.pabzdzdzwiagief.initialization" %% "annotation" % "0.10.1"
 
 example
 -------

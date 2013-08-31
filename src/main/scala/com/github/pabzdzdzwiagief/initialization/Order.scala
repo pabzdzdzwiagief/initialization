@@ -29,15 +29,19 @@ private[this] class Order(val global: Global)
       * initialization problems, e.g. which class members are used.
       */
     override def transform(tree: Tree): Tree = super.transform(tree) match {
-      case classDef: ClassDef => {
+      case classDef: ClassDef => try {
         for {
           (defDef, toAttach) ← infos(classDef)
-          method = defDef.symbol.asMethod
+          method ← defDef.symbol.alternatives if method.isMethod
           annotationInfo ← toAttach
         } {
           method.addAnnotation(annotationInfo)
         }
         classDef
+      } catch {
+        case e: Exception =>
+          unit.warning(classDef.pos, s"$phaseName: failed with exception: $e")
+          classDef
       }
       case other => other
     }

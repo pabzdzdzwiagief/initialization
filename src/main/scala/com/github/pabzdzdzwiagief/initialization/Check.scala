@@ -6,7 +6,7 @@ package com.github.pabzdzdzwiagief.initialization
 
 import java.io.{PrintWriter, StringWriter}
 import reflect.internal.util.BatchSourceFile
-import reflect.internal.util.OffsetPosition
+import reflect.internal.util.{NoPosition, OffsetPosition}
 import tools.nsc.Global
 import tools.nsc.Phase
 import tools.nsc.plugins.PluginComponent
@@ -23,31 +23,37 @@ private[this] class Check(val global: Global) extends PluginComponent {
 
   override final def newPhase(prev: Phase) = new StdPhase(prev) {
     /** Warns upon detection of any reference before assignment. */
-    override def apply(unit: CompilationUnit) = for {
-      classDef@ ClassDef(_, _, _, _) ← unit.body
-      classSymbol = classDef.symbol.asClass
-      if classSymbol.primaryConstructor.exists
-      constructor = classSymbol.primaryConstructor.asMethod
-      start = constructor.pos.point
-      checker = ReferenceBeforeAssignmentChecker(new Context(classSymbol))(_)
-      _ :: accessor :: last :: tail ← checker(Invoke(constructor, start, start))
-      javaStackTrace = for {
-        Invoke(method: MethodSymbol, point, _) ← last :: tail
-        className = method.owner.fullName.toString
-        methodName = method.name.toString
-        fileName = method.sourceFile.name
-        line = position(method, point).safeLine
-      } yield new StackTraceElement(className, methodName, fileName, line)
-      lastMethod = last.member.asInstanceOf[MethodSymbol]
-      message = s"${accessor.member} is referenced before assignment"
-      exceptionImitation = new Exception {
-        override def toString = message
-        setStackTrace(javaStackTrace.toArray)
+    override def apply(unit: CompilationUnit) = try {
+      for {
+        classDef@ ClassDef(_, _, _, _) ← unit.body
+        classSymbol = classDef.symbol.asClass
+        if classSymbol.primaryConstructor.exists
+        checker = ReferenceBeforeAssignmentChecker(new Context(classSymbol))(_)
+        constructor = classSymbol.primaryConstructor.asMethod
+        start = constructor.pos.point
+        stackTraces = checker(Invoke(constructor, start, start))
+        _ :: accessor :: last :: tail ← stackTraces
+        javaStackTrace = for {
+          Invoke(method: MethodSymbol, point, _) ← last :: tail
+          className = method.owner.fullName.toString
+          methodName = method.name.toString
+          fileName = method.sourceFile.name
+          line = position(method, point).safeLine
+        } yield new StackTraceElement(className, methodName, fileName, line)
+        lastMethod = last.member.asInstanceOf[MethodSymbol]
+        message = s"${accessor.member} is referenced before assignment"
+        exceptionImitation = new Exception {
+          override def toString = message
+          setStackTrace(javaStackTrace.toArray)
+        }
+      } {
+        val stringWriter = new StringWriter
+        exceptionImitation.printStackTrace(new PrintWriter(stringWriter))
+        unit.warning(position(lastMethod, accessor.point), stringWriter.toString)
       }
-    } {
-      val stringWriter = new StringWriter
-      exceptionImitation.printStackTrace(new PrintWriter(stringWriter))
-      unit.warning(position(lastMethod, accessor.point), stringWriter.toString)
+    } catch {
+      case e: Exception =>
+        unit.warning(NoPosition, s"$phaseName: failed with exception: $e")
     }
 
     private[this] def position(method: MethodSymbol, point: Int) =
