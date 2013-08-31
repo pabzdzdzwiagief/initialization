@@ -30,7 +30,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
         if classSymbol.primaryConstructor.exists
         checker = ReferenceBeforeAssignmentChecker(new Context(classSymbol))(_)
         constructor = classSymbol.primaryConstructor.asMethod
-        start = constructor.pos.point
+        start = constructor.pos.pointOrElse(-1)
         stackTraces = checker(Invoke(constructor, start, start))
         _ :: accessor :: last :: tail ← stackTraces
         javaStackTrace = for {
