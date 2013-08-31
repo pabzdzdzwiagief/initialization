@@ -14,7 +14,14 @@ import org.scalatest.BeforeAndAfter
 /** Tests if compilation outputs are matching those expected. */
 class InitializationCheckingSuite extends FunSuite with BeforeAndAfter {
   for (fileName <- testFileNames) {
-    test(s"${readTitle(fileName)} in $fileName") {
+    val title = s"${readTitle(fileName)} in $fileName"
+    val ignorePrefix = "*ignore* "
+    val testOrIgnore = if (title.startsWith(ignorePrefix)) {
+      ignore(title.substring(ignorePrefix.length)) _
+    } else {
+      test(title) _
+    }
+    testOrIgnore {
       expectResult(readExpectedOutput(fileName)) {
         compile(source(fileName))
       }
