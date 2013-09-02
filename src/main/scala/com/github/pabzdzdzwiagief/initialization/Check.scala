@@ -4,7 +4,6 @@
 
 package com.github.pabzdzdzwiagief.initialization
 
-import java.io.{PrintWriter, StringWriter}
 import reflect.internal.util.BatchSourceFile
 import reflect.internal.util.{NoPosition, OffsetPosition}
 import tools.nsc.Global
@@ -13,7 +12,7 @@ import tools.nsc.plugins.PluginComponent
 
 private[this] class Check(val global: Global) extends PluginComponent {
   import global.{ClassDef, CompilationUnit, Literal}
-  import global.{MethodSymbol, ClassSymbol}
+  import global.{Symbol, MethodSymbol, ClassSymbol}
   import ReferenceBeforeAssignmentChecker.Environment
 
   override final val phaseName = "initcheck"
@@ -29,35 +28,21 @@ private[this] class Check(val global: Global) extends PluginComponent {
         classSymbol = classDef.symbol.asClass
         if classSymbol.primaryConstructor.exists
         checker = ReferenceBeforeAssignmentChecker(new Context(classSymbol))(_)
+        present = ErrorPresenter(positions)(_)
         constructor = classSymbol.primaryConstructor.asMethod
         start = constructor.pos.pointOrElse(-1)
-        stackTraces = checker(Invoke(constructor, start, start))
-        _ :: accessor :: last :: tail ← stackTraces
-        javaStackTrace = for {
-          Invoke(method: MethodSymbol, point, _) ← last :: tail
-          className = method.owner.fullName.toString
-          methodName = method.name.toString
-          fileName = method.sourceFile.name
-          line = position(method, point).safeLine
-        } yield new StackTraceElement(className, methodName, fileName, line)
-        lastMethod = last.member.asInstanceOf[MethodSymbol]
-        message = s"${accessor.member} is referenced before assignment"
-        exceptionImitation = new Exception {
-          override def toString = message
-          setStackTrace(javaStackTrace.toArray)
-        }
+        stackTrace ← checker(Invoke(constructor, start, start))
+        error = present(stackTrace).orElse(throw badStackException)
+        positions.Error(where, message) ← error
       } {
-        val stringWriter = new StringWriter
-        exceptionImitation.printStackTrace(new PrintWriter(stringWriter))
-        unit.warning(position(lastMethod, accessor.point), stringWriter.toString)
+        unit.warning(where.getOrElse(NoPosition), message)
       }
     } catch {
       case e: Exception =>
         unit.warning(NoPosition, s"$phaseName: failed with exception: $e")
     }
 
-    private[this] def position(method: MethodSymbol, point: Int) =
-      new OffsetPosition(new BatchSourceFile(method.sourceFile), point)
+    private[this] object badStackException extends Exception
   }
 
   private[this] class Context(inClass: ClassSymbol) extends Environment {
@@ -95,5 +80,26 @@ private[this] class Check(val global: Global) extends PluginComponent {
         i.copy(member = m.overridingSymbol(inClass).orElse(m))
       case notOverridden => notOverridden
     }
+  }
+
+  private[this] object positions extends ErrorPresenter.Environment {
+    type Instruction = Trace
+
+    type Location = OffsetPosition
+
+    def className(x: Instruction): String =
+      x.member.asInstanceOf[Symbol].owner.fullName.toString
+
+    def methodName(x: Instruction): String =
+      x.member.asInstanceOf[Symbol].name.toString
+
+    def location(x: Instruction, context: Instruction): Option[Location] = for {
+      source ← Option(context.member.asInstanceOf[Symbol].sourceFile)
+      point ← if (x.point == -1) None else Some(x.point)
+    } yield new OffsetPosition(new BatchSourceFile(source), point)
+
+    def fileName(x: Location): String = x.source.file.name
+
+    def line(x: Location): Int = x.safeLine
   }
 }
