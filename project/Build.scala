@@ -7,7 +7,7 @@ import Keys._
 
 object Build extends sbt.Build {
   val common = Defaults.defaultSettings ++ Seq (
-    version       := "0.10.2-SNAPSHOT",
+    version       := "0.10.2",
     scalaVersion  := "2.10.2",
     scalacOptions := Seq(
       "-deprecation",
@@ -21,7 +21,7 @@ object Build extends sbt.Build {
     homepage := Some(url("https://github.com/pabzdzdzwiagief/initialization")),
     publishTo := {
       val nexus = "https://oss.sonatype.org/"
-      if (version.value.trim.endsWith("SNAPSHOT"))
+      if (version.value.trim.endsWith("-SNAPSHOT"))
         Some("snapshots" at nexus + "content/repositories/snapshots")
       else
         Some("releases"  at nexus + "service/local/staging/deploy/maven2")

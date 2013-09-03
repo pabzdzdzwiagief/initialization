@@ -9,20 +9,19 @@ Still, at least some classes of such errors can be covered.
 
 The difference between this and `-Xcheckinit` compiler switch is that
 checks are done purely during compilation time. There are no costs
-incurred at runtime, although a small library dependency is brought for
+incurred at runtime, although a library dependency is brought for
 necessary metadata.
 
 usage
 -----
 
-Download the source and run `sbt install`.
-Then add this to your `build.sbt`:
+Add this to your `build.sbt`:
 
      autoCompilerPlugins := true
 
-     addCompilerPlugin("com.github.pabzdzdzwiagief" %% "initialization" % "0.10.1")
+     addCompilerPlugin("com.github.pabzdzdzwiagief" %% "initialization" % "0.10.2")
 
-     libraryDependencies += "com.github.pabzdzdzwiagief.initialization" %% "annotation" % "0.10.1"
+     libraryDependencies += "com.github.pabzdzdzwiagief.initialization" %% "annotation" % "0.10.2"
 
 example
 -------
@@ -50,6 +49,35 @@ The code above will generate following warning:
                 ^
 
 For more examples see `src/test/resources/positives/`.
+
+limitations
+-----------
+
+#### false positives
+
+The plugin may happen to be overreactive. In such cases use standard
+`@unchecked` annotation.
+
+    // uncheck.scala
+
+    pacakge localhost
+
+    import util.Random.{nextBoolean => iFeelLucky}
+
+    class uncheck {
+      (m1() : @unchecked) // no warnings
+      val v1 = 4
+
+      def m1() {
+        println(if (iFeelLucky) 4 else v1)
+      }
+    }
+
+#### false negatives
+
+For now, the plugin does not track references done from inner classes.
+This also affects anonymous functions (which are implemented using innner
+classes) and `for` loops (which are implemented using anonymous functions).
 
 license
 -------
