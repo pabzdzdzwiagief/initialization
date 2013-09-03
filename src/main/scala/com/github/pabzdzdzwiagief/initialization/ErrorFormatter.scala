@@ -6,7 +6,7 @@ package com.github.pabzdzdzwiagief.initialization
 
 import java.io.{PrintWriter, StringWriter}
 
-private[this] object ErrorPresenter {
+private[this] object ErrorFormatter {
   trait Environment {
     /** Error message template. */
     case class Error(location: Option[Location], message: String)

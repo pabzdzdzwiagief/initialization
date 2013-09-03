@@ -28,12 +28,12 @@ private[this] class Check(val global: Global) extends PluginComponent {
         classSymbol = classDef.symbol.asClass
         if classSymbol.primaryConstructor.exists
         checker = ReferenceBeforeAssignmentChecker(new Context(classSymbol))(_)
-        present = ErrorPresenter(positions)(_)
+        present = ErrorFormatter(formatterEnvironment)(_)
         constructor = classSymbol.primaryConstructor.asMethod
         start = constructor.pos.pointOrElse(-1)
         stackTrace ← checker(Invoke(constructor, start, start))
         error = present(stackTrace).orElse(throw badStackException)
-        positions.Error(where, message) ← error
+        formatterEnvironment.Error(where, message) ← error
       } {
         unit.warning(where.getOrElse(NoPosition), message)
       }
@@ -82,7 +82,7 @@ private[this] class Check(val global: Global) extends PluginComponent {
     }
   }
 
-  private[this] object positions extends ErrorPresenter.Environment {
+  private[this] object formatterEnvironment extends ErrorFormatter.Environment {
     type Instruction = Trace
 
     type Location = OffsetPosition
