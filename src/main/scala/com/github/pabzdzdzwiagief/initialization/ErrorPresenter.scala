@@ -45,7 +45,7 @@ private[this] object ErrorPresenter {
            (stackTrace: List[env.Instruction]): Option[env.Error] = for {
     _ :: accessor :: last :: tail ← Some(stackTrace)
     javaStackTrace = for {
-      (instruction, context) ← (last :: tail).zip(accessor :: last :: tail)
+      (instruction, context) ← (last :: tail).zip(tail :+ stackTrace.last)
       location = env.location(instruction, context)
       className = env.className(instruction)
       methodName = env.methodName(instruction)
