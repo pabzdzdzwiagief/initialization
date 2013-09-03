@@ -7,7 +7,7 @@ import Keys._
 
 object Build extends sbt.Build {
   val common = Defaults.defaultSettings ++ Seq (
-    version       := "0.10.1",
+    version       := "0.10.2-SNAPSHOT",
     scalaVersion  := "2.10.2",
     scalacOptions := Seq(
       "-deprecation",
@@ -18,12 +18,28 @@ object Build extends sbt.Build {
     licenses      := Seq(
       "The BSD 2-Clause License" → url("http://opensource.org/licenses/BSD-2-Clause")
     ),
+    homepage := Some(url("https://github.com/pabzdzdzwiagief/initialization")),
+    publishTo := {
+      val nexus = "https://oss.sonatype.org/"
+      if (version.value.trim.endsWith("SNAPSHOT"))
+        Some("snapshots" at nexus + "content/repositories/snapshots")
+      else
+        Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+    },
+    publishMavenStyle := true,
+    publishArtifact in Test := false,
+    pomIncludeRepository := { _ => false },
     pomExtra := (
+      <scm>
+        <url>git@github.com:pabzdzdzwiagief/initialization.git</url>
+        <connection>scm:git:git@github.com:pabzdzdzwiagief/initialization.git</connection>
+      </scm>
       <developers>
         <developer>
           <id>pabzdzdzwiagief</id>
           <name>Aleksander Bielawski</name>
           <email>pabzdzdzwiagief@gmail.com</email>
+          <url>https://github.com/pabzdzdzwiagief</url>
         </developer>
       </developers>
     )
@@ -40,7 +56,7 @@ object Build extends sbt.Build {
       libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test"
     )
   )
-  
+
 
   lazy val annotation = Project(
     id = "annotation",
