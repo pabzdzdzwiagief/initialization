@@ -15,7 +15,8 @@ private[this] class Order(val global: Global)
   import global.{Select, This, Assign => AssignTree, Apply, Ident, Super}
   import global.{Typed, TypeTree, Annotated, AnnotatedType}
   import global.{Literal, Constant}
-  import global.{newTypeName, rootMirror, AnnotationInfo}
+  import global.AnnotationInfo
+  import global.rootMirror.getRequiredClass
   import global.definitions.UncheckedClass.{tpe => uncheckedType}
 
   override final val phaseName = "initorder"
@@ -152,10 +153,9 @@ private[this] class Order(val global: Global)
       * [[scala.reflect.internal.AnnotationInfos#AnnotationInfo]].
       */
     private[this] def toInfo(annotation: Trace): AnnotationInfo = {
-      val name = newTypeName(annotation.getClass.getCanonicalName)
-      val classSymbol = rootMirror.getClassByName(name)
+      val name = annotation.getClass.getCanonicalName
       val args = annotation.productIterator.map(c => Literal(Constant(c)))
-      AnnotationInfo(classSymbol.tpe, args.toList, Nil)
+      AnnotationInfo(getRequiredClass(name).tpe, args.toList, Nil)
     }
   }
 }

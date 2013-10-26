@@ -13,6 +13,7 @@ import tools.nsc.plugins.PluginComponent
 private[this] class Check(val global: Global) extends PluginComponent {
   import global.{ClassDef, CompilationUnit, Literal}
   import global.{Symbol, MethodSymbol, ClassSymbol}
+  import global.rootMirror.getRequiredClass
   import ReferenceBeforeAssignmentChecker.Environment
 
   override final val phaseName = "initcheck"
@@ -65,14 +66,17 @@ private[this] class Check(val global: Global) extends PluginComponent {
       */
     private[this] def follow(method: MethodSymbol): Seq[Trace] = for {
       info ← method.annotations
+      if info.atp <:< traceType
       annotationClass = Class.forName(info.atp.typeSymbol.fullName)
-      if classOf[Trace].isAssignableFrom(annotationClass)
       args = info.args.map(_.asInstanceOf[Literal].value.value)
       anyRefArgs = args.map(_.asInstanceOf[AnyRef]).toSeq
       constructors = annotationClass.getConstructors
       init ← constructors.find(_.getParameterTypes.length == anyRefArgs.length)
       instruction = init.newInstance(anyRefArgs: _*).asInstanceOf[Trace]
     } yield overrideOrSelf(instruction)
+
+    private[this] val traceType =
+      getRequiredClass(classOf[Trace].getCanonicalName).tpe
 
     private[this] def overrideOrSelf(x: Trace): Trace = x match {
       case notOverridable: Special => notOverridable
