@@ -6,7 +6,7 @@ import sbt._
 import Keys._
 
 object Build extends sbt.Build {
-  val common = Defaults.defaultSettings ++ Seq (
+  val common = Defaults.coreDefaultSettings ++ Seq (
     version       := "0.10.3",
     scalaVersion  := "2.10.2",
     scalacOptions := Seq(
