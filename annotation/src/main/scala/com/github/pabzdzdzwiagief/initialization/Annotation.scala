@@ -4,7 +4,7 @@
 
 package com.github.pabzdzdzwiagief.initialization
 
-import annotation.StaticAnnotation
+import scala.annotation.StaticAnnotation
 
 /** Represents something that happens during initialization procedure. */
 private[this] sealed abstract class Trace

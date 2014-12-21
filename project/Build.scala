@@ -7,8 +7,8 @@ import Keys._
 
 object Build extends sbt.Build {
   val common = Defaults.coreDefaultSettings ++ Seq (
-    version       := "0.10.3",
     scalaVersion  := "2.10.2",
+    version       := "0.11.0-SNAPSHOT",
     scalacOptions := Seq(
       "-deprecation",
       "-unchecked",
@@ -56,8 +56,7 @@ object Build extends sbt.Build {
       libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.3" % "test",
       libraryDependencies += "org.springframework" % "spring-core" % "4.1.3.RELEASE" % "test"
     )
-  )
-
+  ) dependsOn annotation
 
   lazy val annotation = Project(
     id = "annotation",
@@ -67,7 +66,5 @@ object Build extends sbt.Build {
       description := "library dependencies for projects using the `initialization` plugin",
       organization := "com.github.pabzdzdzwiagief.initialization"
     )
-  ) dependsOn(plugin) /* FIXME: Of course dependence goes the other way
-                         around, but then annotations are missing on the
-                         bootclasspath. */
+  )
 }
