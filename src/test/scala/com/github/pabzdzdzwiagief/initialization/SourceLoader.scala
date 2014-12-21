@@ -26,7 +26,7 @@ class SourceLoader extends (String => SourceFile) {
       override val sizeOption = Some(content.getBytes.length)
 
       private[this] lazy val content = {
-        val source = Source.fromURL(getClass.getResource(sourcePath))
+        val source = Source.fromURL(sourcePath)("UTF-8")
         val content = source.mkString
         source.close()
         content

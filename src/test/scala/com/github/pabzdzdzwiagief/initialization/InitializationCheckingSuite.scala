@@ -4,7 +4,7 @@
 
 package com.github.pabzdzdzwiagief.initialization
 
-import io.Source
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver
 import tools.nsc.io.File
 import java.io.{File => JFile}
 
@@ -13,8 +13,10 @@ import org.scalatest.BeforeAndAfter
 
 /** Tests if compilation outputs are matching those expected. */
 class InitializationCheckingSuite extends FunSuite with BeforeAndAfter {
-  for (fileName <- testFileNames) {
-    val title = s"${readTitle(fileName)} in $fileName"
+  for (url <- testFiles) {
+    val path = url.toString
+    val shortPath = url.getPath.split("/").takeRight(2).mkString("/")
+    val title = s"${readTitle(path)} in $shortPath"
     val ignorePrefix = "*not implemented* "
     val testOrIgnore = if (title.startsWith(ignorePrefix)) {
       ignore(title.substring(ignorePrefix.length)) _
@@ -22,8 +24,8 @@ class InitializationCheckingSuite extends FunSuite with BeforeAndAfter {
       test(title) _
     }
     testOrIgnore {
-      expectResult(readExpectedOutput(fileName)) {
-        compile(source(fileName))
+      expectResult(readExpectedOutput(path)) {
+        compile(source(path))
       }
     }
   }
@@ -45,12 +47,10 @@ class InitializationCheckingSuite extends FunSuite with BeforeAndAfter {
   lazy val outputDirectory = new File(new JFile("localhost"))
 
   /** Resource files used for testing. */
-  lazy val testFileNames = {
-    val source = Source.fromInputStream(getClass.getResourceAsStream("/list"))
-    val names = source.getLines().filterNot(_.isEmpty).toList
-    source.close()
-    names
-  }
+  lazy val testFiles =
+    new PathMatchingResourcePatternResolver()
+      .getResources("classpath*:**/*.scala")
+      .map(_.getURL)
 
   /** Scala compiler object. */
   lazy val compile = new Compiler(pluginClasses = classOf[Initialization])

@@ -53,7 +53,8 @@ object Build extends sbt.Build {
       description := "scalac plugin for initialization order checking",
       organization := "com.github.pabzdzdzwiagief",
       libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
-      libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test"
+      libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test",
+      libraryDependencies += "org.springframework" % "spring-core" % "4.1.3.RELEASE" % "test"
     )
   )
 
