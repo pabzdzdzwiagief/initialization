@@ -7,8 +7,8 @@ import Keys._
 
 object Build extends sbt.Build {
   val common = Defaults.coreDefaultSettings ++ Seq (
-    scalaVersion  := "2.10.2",
     version       := "0.11.0-SNAPSHOT",
+    scalaVersion  := "2.10.4",
     scalacOptions := Seq(
       "-deprecation",
       "-unchecked",
