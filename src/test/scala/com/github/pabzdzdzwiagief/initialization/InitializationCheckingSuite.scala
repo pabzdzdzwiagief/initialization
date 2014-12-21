@@ -24,7 +24,7 @@ class InitializationCheckingSuite extends FunSuite with BeforeAndAfter {
       test(title) _
     }
     testOrIgnore {
-      expectResult(readExpectedOutput(path)) {
+      assertResult(readExpectedOutput(path)) {
         compile(source(path))
       }
     }
