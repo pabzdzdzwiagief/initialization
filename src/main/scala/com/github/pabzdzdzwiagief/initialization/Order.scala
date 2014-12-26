@@ -39,7 +39,7 @@ private[this] class Order(val global: Global)
           method ← defDef.symbol.alternatives if method.isMethod
           annotationInfo ← toAttach
         } {
-          method.addAnnotation(annotationInfo)
+          classDef.symbol.addAnnotation(annotationInfo)
         }
         classDef
       } catch {
@@ -56,6 +56,7 @@ private[this] class Order(val global: Global)
     private[this] def infos(c: ClassDef): Map[DefDef, List[AnnotationInfo]] =
       (for {
         defDef@ DefDef(_, _, _,  _, _, _) ←  c.impl.body
+        from = defDef.symbol.asMethod
         ordinals = dfsTraverse(defDef).zipWithIndex.toMap
         shouldCheck = (for {
           Typed(expression, _) ← unchecks(defDef)
@@ -64,22 +65,22 @@ private[this] class Order(val global: Global)
         access = for {
           tree ← accesses(defDef) if shouldCheck(tree)
           point = tree.pos.pointOrElse(-1)
-        } yield Access(tree.symbol.asTerm, point, ordinals(tree))
+        } yield Access(from, tree.symbol.asTerm, point, ordinals(tree))
         invoke = for {
           tree ← invocations(defDef) if shouldCheck(tree)
           invoked = tree.symbol.asMethod
           point = tree.pos.pointOrElse(-1)
-        } yield Invoke(invoked, point, ordinals(tree))
+        } yield Invoke(from, invoked, point, ordinals(tree))
         special = for {
           tree ← specials(defDef) if shouldCheck(tree)
           invoked = tree.symbol.asMethod
           position = if (invoked.isConstructor) invoked.pos else tree.pos
           point = position.pointOrElse(-1)
-        } yield new Special(invoked, point, ordinals(tree))
+        } yield new Special(from, invoked, point, ordinals(tree))
         assign = for {
           tree ← assignments(defDef) if shouldCheck(tree)
           point = tree.pos.pointOrElse(-1)
-        } yield Assign(tree.lhs.symbol.asTerm, point, ordinals(tree))
+        } yield Assign(from, tree.lhs.symbol.asTerm, point, ordinals(tree))
         toAttach = access ::: invoke ::: special ::: assign
         annotationInfos = toAttach.map(toInfo)
       } yield defDef → annotationInfos).toMap
@@ -162,6 +163,8 @@ private[this] class Order(val global: Global)
       AnnotationInfo(getRequiredClass(name).tpe, Nil, List(
         n("owner") → a(annotation.member.owner.fullNameString),
         n("memberName") → a(annotation.member.nameString),
+        n("fromMemberName") → a(annotation.from.nameString),
+        n("fromTypeString") → a(annotation.from.info.safeToString),
         n("typeString") → a(annotation.member.info.safeToString),
         n("traceType") → a(annotation.getClass.getSimpleName),
         n("point") → a(annotation.point),

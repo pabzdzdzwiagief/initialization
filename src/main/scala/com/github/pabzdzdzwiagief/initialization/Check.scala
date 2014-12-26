@@ -35,7 +35,7 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
         present = ErrorFormatter(formatterEnvironment)(_)
         constructor = classSymbol.primaryConstructor.asMethod
         start = constructor.pos.pointOrElse(-1)
-        stackTrace ← checker(Invoke(constructor, start, start))
+        stackTrace ← checker(Invoke(constructor, constructor, start, start))
         error = present(stackTrace).orElse(throw badStackException)
         formatterEnvironment.Error(where, message) ← error
       } {
@@ -53,14 +53,14 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
     type Instruction = Trace
 
     def flatten(x: Instruction): Either[x.type, Stream[Instruction]] = x match {
-      case Invoke(m: MethodSymbol, _, _) => Right(follow(m).toStream)
+      case Invoke(_, m: MethodSymbol, _, _) => Right(follow(m).toStream)
       case _ => Left(x)
     }
 
     def lessThan(x: Instruction, y: Instruction) = x.ordinal < y.ordinal
 
     def conflict(x: Instruction, y: Instruction) = (x, y) match {
-      case (Access(v1, _, _), Assign(v2, _, _)) => v1 == v2
+      case (Access(_, v1, _, _), Assign(_, v2, _, _)) => v1 == v2
       case _ => false
     }
 
@@ -68,17 +68,21 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
       * from annotations attached to it.
       */
     private[this] def follow(method: MethodSymbol): Seq[Trace] = for {
-      info ← method.annotations
+      info ← method.owner.annotations
       if info.atp <:< traceType
       map = info.javaArgs map {
         case (n, a: LiteralAnnotArg) => (n.decoded, a.const)
       }
       Constant(owner: String) = map("owner")
       Constant(memberName: String) = map("memberName")
+      Constant(fromMemberName: String) = map("fromMemberName")
       Constant(typeString: String) = map("typeString")
+      Constant(fromTypeString: String) = map("fromTypeString")
       Constant(traceType: String) = map("traceType")
       Constant(point: Int) = map("point")
       Constant(ordinal: Int) = map("ordinal")
+      if fromMemberName == method.nameString
+      if fromTypeString == method.info.safeToString
       fromType = getRequiredClass(owner).tpe
       rawName = global.stringToTermName(memberName)
       internalName = if (rawName == CONSTRUCTOR) rawName else rawName.encode
@@ -89,12 +93,12 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
       symbol ← fromType.memberBasedOnName(name, 0).alternatives
       if fromType.memberType(symbol).safeToString == typeString
     } yield traceType match {
-      case "Special" => new Special(symbol.asMethod, point, ordinal)
-      case "Invoke" => Invoke(symbol.overridingSymbol(inClass)
+      case "Special" => new Special(method, symbol.asMethod, point, ordinal)
+      case "Invoke" => Invoke(method, symbol.overridingSymbol(inClass)
                                     .orElse(symbol)
                                     .asMethod, point, ordinal)
-      case "Access" => Access(symbol.asTerm, point, ordinal)
-      case "Assign" => Assign(symbol.asTerm, point, ordinal)
+      case "Access" => Access(method, symbol.asTerm, point, ordinal)
+      case "Assign" => Assign(method, symbol.asTerm, point, ordinal)
     }
 
     private[this] val traceType =

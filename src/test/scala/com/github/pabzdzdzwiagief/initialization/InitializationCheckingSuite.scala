@@ -30,7 +30,7 @@ class InitializationCheckingSuite extends FunSuite with BeforeAndAfter {
     }
   }
 
-  ignore("Initialization order information is persisted between compiler runs") {
+  test("Initialization order information is persisted between compiler runs") {
     def url(file: String) =
       getClass.getResource(s"/separate-runs/$file.scala").toString
     assert(compile(source(url("base"))).isEmpty)

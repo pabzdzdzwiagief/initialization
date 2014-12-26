@@ -11,6 +11,9 @@ private[this] trait Annotations {
 
   /** Represents something that happens during initialization procedure. */
   sealed abstract class Trace {
+    /** Method from which `member` is referenced. */
+    val from: global.MethodSymbol
+
     /** Object that identifies relevant class member. */
     val member: global.Symbol
 
@@ -23,15 +26,15 @@ private[this] trait Annotations {
     val ordinal: Int
   }
 
-  final case class Access(member: global.TermSymbol, point: Int, ordinal: Int)
+  final case class Access(from: global.MethodSymbol, member: global.TermSymbol, point: Int, ordinal: Int)
     extends Trace
 
-  final case class Assign(member: global.TermSymbol, point: Int, ordinal: Int)
+  final case class Assign(from: global.MethodSymbol, member: global.TermSymbol, point: Int, ordinal: Int)
     extends Trace
 
-  sealed case class Invoke(member: global.MethodSymbol, point: Int, ordinal: Int)
+  sealed case class Invoke(from: global.MethodSymbol, member: global.MethodSymbol, point: Int, ordinal: Int)
     extends Trace
 
-  final class Special(member: global.MethodSymbol, point: Int, ordinal: Int)
-    extends Invoke(member, point, ordinal)
+  final class Special(from: global.MethodSymbol, member: global.MethodSymbol, point: Int, ordinal: Int)
+    extends Invoke(from, member, point, ordinal)
 }
