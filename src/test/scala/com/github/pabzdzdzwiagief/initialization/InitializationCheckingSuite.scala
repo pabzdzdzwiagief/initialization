@@ -30,6 +30,15 @@ class InitializationCheckingSuite extends FunSuite with BeforeAndAfter {
     }
   }
 
+  test("Initialization order information is persisted between compiler runs") {
+    def url(file: String) =
+      getClass.getResource(s"/separate-runs/$file.scala").toString
+    assert(compile(source(url("base"))).isEmpty)
+    assertResult(readExpectedOutput(url("inheritance"))) {
+      compile(source(url("inheritance")))
+    }
+  }
+
   before {
     if (outputDirectory.exists) {
       throw new RuntimeException("""Output directory for test compilation does
@@ -49,11 +58,11 @@ class InitializationCheckingSuite extends FunSuite with BeforeAndAfter {
   /** Resource files used for testing. */
   lazy val testFiles =
     new PathMatchingResourcePatternResolver()
-      .getResources("classpath*:**/*.scala")
+      .getResources("classpath*:examples/*/*.scala")
       .map(_.getURL)
 
   /** Scala compiler object. */
-  lazy val compile = new Compiler(pluginClasses = classOf[Initialization])
+  def compile = new Compiler(pluginClasses = classOf[Initialization])
 
   /** Source code loader. */
   lazy val source = new SourceLoader

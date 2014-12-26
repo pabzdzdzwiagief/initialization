@@ -48,7 +48,7 @@ The code above will generate following warning:
         println(v1)
                 ^
 
-For more examples see `src/test/resources/positives/`.
+For more examples see `src/test/resources/examples/positives/`.
 
 limitations
 -----------
