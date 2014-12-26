@@ -21,7 +21,8 @@ lazy val annotation = (project in file("annotation")).
   settings(
     name := "annotation",
     description := "library dependencies for projects using the `initialization` plugin",
-    organization := "com.github.pabzdzdzwiagief.initialization"
+    organization := "com.github.pabzdzdzwiagief.initialization",
+    javacOptions in (Compile, doc) ++= Seq("-private")
   )
 
 lazy val common = Seq (

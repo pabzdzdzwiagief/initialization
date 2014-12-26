@@ -5,7 +5,7 @@
 package com.github.pabzdzdzwiagief.initialization
 
 import tools.nsc.Global
-import tools.nsc.plugins.Plugin
+import scala.tools.nsc.plugins.{PluginComponent, Plugin}
 
 /** This plugin's class.
   * @param global Compiler to which this plugin is plugged.
@@ -15,5 +15,6 @@ class Initialization(val global: Global) extends Plugin {
 
   final val description = "checks for accesses to uninitialized fields"
 
-  final val components = List(new Order(global), new Check(global))
+  final val components: List[PluginComponent] =
+    List(new Order(global), new Check(global))
 }

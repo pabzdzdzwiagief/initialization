@@ -10,10 +10,13 @@ import tools.nsc.Global
 import tools.nsc.Phase
 import tools.nsc.plugins.PluginComponent
 
-private[this] class Check(val global: Global) extends PluginComponent {
-  import global.{ClassDef, CompilationUnit, Literal}
-  import global.{Symbol, MethodSymbol, ClassSymbol}
+import com.github.pabzdzdzwiagief.initialization.{Trace => TraceAnnotation}
+
+private[this] class Check(val global: Global) extends PluginComponent with Annotations {
+  import global.{ClassDef, CompilationUnit, LiteralAnnotArg, Constant}
+  import global.{MethodSymbol, ClassSymbol}
   import global.rootMirror.getRequiredClass
+  import global.nme.{getterToLocal, CONSTRUCTOR}
   import ReferenceBeforeAssignmentChecker.Environment
 
   override final val phaseName = "initcheck"
@@ -67,23 +70,35 @@ private[this] class Check(val global: Global) extends PluginComponent {
     private[this] def follow(method: MethodSymbol): Seq[Trace] = for {
       info ← method.annotations
       if info.atp <:< traceType
-      annotationClass = Class.forName(info.atp.typeSymbol.fullName)
-      args = info.args.map(_.asInstanceOf[Literal].value.value)
-      anyRefArgs = args.map(_.asInstanceOf[AnyRef]).toSeq
-      constructors = annotationClass.getConstructors
-      init ← constructors.find(_.getParameterTypes.length == anyRefArgs.length)
-      instruction = init.newInstance(anyRefArgs: _*).asInstanceOf[Trace]
-    } yield overrideOrSelf(instruction)
+      map = info.javaArgs map {
+        case (n, a: LiteralAnnotArg) => (n.decoded, a.const)
+      }
+      Constant(owner: String) = map("owner")
+      Constant(memberName: String) = map("memberName")
+      Constant(typeString: String) = map("typeString")
+      Constant(traceType: String) = map("traceType")
+      Constant(point: Int) = map("point")
+      Constant(ordinal: Int) = map("ordinal")
+      fromType = getRequiredClass(owner).tpe
+      rawName = global.stringToTermName(memberName)
+      internalName = if (rawName == CONSTRUCTOR) rawName else rawName.encode
+      name = traceType match {
+        case "Special" | "Invoke"  => internalName
+        case "Access" | "Assign" => getterToLocal(internalName)
+      }
+      symbol ← fromType.memberBasedOnName(name, 0).alternatives
+      if fromType.memberType(symbol).safeToString == typeString
+    } yield traceType match {
+      case "Special" => new Special(symbol.asMethod, point, ordinal)
+      case "Invoke" => Invoke(symbol.overridingSymbol(inClass)
+                                    .orElse(symbol)
+                                    .asMethod, point, ordinal)
+      case "Access" => Access(symbol.asTerm, point, ordinal)
+      case "Assign" => Assign(symbol.asTerm, point, ordinal)
+    }
 
     private[this] val traceType =
-      getRequiredClass(classOf[Trace].getCanonicalName).tpe
-
-    private[this] def overrideOrSelf(x: Trace): Trace = x match {
-      case notOverridable: Special => notOverridable
-      case i@ Invoke(m: MethodSymbol, _, _) =>
-        i.copy(member = m.overridingSymbol(inClass).orElse(m))
-      case notOverridden => notOverridden
-    }
+      getRequiredClass(classOf[TraceAnnotation].getCanonicalName).tpe
   }
 
   private[this] object formatterEnvironment extends ErrorFormatter.Environment {
@@ -91,14 +106,12 @@ private[this] class Check(val global: Global) extends PluginComponent {
 
     type Location = OffsetPosition
 
-    def className(x: Instruction): String =
-      x.member.asInstanceOf[Symbol].owner.fullName.toString
+    def className(x: Instruction): String = x.member.owner.fullName.toString
 
-    def methodName(x: Instruction): String =
-      x.member.asInstanceOf[Symbol].name.toString
+    def methodName(x: Instruction): String = x.member.name.toString
 
     def location(x: Instruction, context: Instruction): Option[Location] = for {
-      source ← Option(context.member.asInstanceOf[Symbol].sourceFile)
+      source ← Option(context.member.sourceFile)
       point ← if (x.point == -1) None else Some(x.point)
     } yield new OffsetPosition(new BatchSourceFile(source), point)
 
@@ -106,4 +119,6 @@ private[this] class Check(val global: Global) extends PluginComponent {
 
     def line(x: Location): Int = x.safeLine
   }
+
+
 }

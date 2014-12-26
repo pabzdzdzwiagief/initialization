@@ -8,15 +8,18 @@ import tools.nsc.Global
 import tools.nsc.plugins.PluginComponent
 import tools.nsc.transform.Transform
 
+import com.github.pabzdzdzwiagief.initialization.{Trace => TraceAnnotation}
+
 private[this] class Order(val global: Global)
-  extends PluginComponent with Transform {
+  extends PluginComponent with Transform with Annotations {
   import global.{CompilationUnit, Transformer}
   import global.{Tree, ClassDef, DefDef}
   import global.{Select, This, Assign => AssignTree, Apply, Ident, Super}
   import global.{Typed, TypeTree, Annotated, AnnotatedType}
-  import global.{Literal, Constant}
+  import global.{LiteralAnnotArg, Constant}
   import global.AnnotationInfo
   import global.rootMirror.getRequiredClass
+  import global.stringToTermName
   import global.definitions.UncheckedClass.{tpe => uncheckedType}
 
   override final val phaseName = "initorder"
@@ -153,9 +156,17 @@ private[this] class Order(val global: Global)
       * [[scala.reflect.internal.AnnotationInfos#AnnotationInfo]].
       */
     private[this] def toInfo(annotation: Trace): AnnotationInfo = {
-      val name = annotation.getClass.getCanonicalName
-      val args = annotation.productIterator.map(c => Literal(Constant(c)))
-      AnnotationInfo(getRequiredClass(name).tpe, args.toList, Nil)
+      val name = classOf[TraceAnnotation].getCanonicalName
+      def a(x: Any) = LiteralAnnotArg(Constant(x))
+      def n(s: String) = stringToTermName(s)
+      AnnotationInfo(getRequiredClass(name).tpe, Nil, List(
+        n("owner") → a(annotation.member.owner.fullNameString),
+        n("memberName") → a(annotation.member.nameString),
+        n("typeString") → a(annotation.member.info.safeToString),
+        n("traceType") → a(annotation.getClass.getSimpleName),
+        n("point") → a(annotation.point),
+        n("ordinal") → a(annotation.ordinal)
+      ))
     }
   }
 }
