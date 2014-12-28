@@ -6,8 +6,14 @@ lazy val initialization = (project in file(".")).
     organization := "com.github.pabzdzdzwiagief",
     libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided",
     libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.3" % "test",
-    libraryDependencies += "org.springframework" % "spring-core" % "4.1.3.RELEASE" % "test"
+    libraryDependencies += "org.springframework" % "spring-core" % "4.1.3.RELEASE" % "test",
+    assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false),
+    artifact in (Compile, assembly) := {
+      val art = (artifact in (Compile, assembly)).value
+      art.copy(`classifier` = Some("assembly"))
+    }
   ).
+  settings(addArtifact(artifact in (Compile, assembly), assembly): _*).
   dependsOn(annotation)
 
 lazy val annotation = (project in file("annotation")).
