@@ -26,15 +26,23 @@ private[this] trait Annotations {
     val ordinal: Int
   }
 
-  final case class Access(from: global.MethodSymbol, member: global.TermSymbol, point: Int, ordinal: Int)
-    extends Trace
+  abstract sealed class Access extends Trace {
+    override val member: global.TermSymbol
+  }
 
-  final case class Assign(from: global.MethodSymbol, member: global.TermSymbol, point: Int, ordinal: Int)
-    extends Trace
+  abstract sealed class Invocation extends Trace {
+    override val member: global.MethodSymbol
+  }
 
-  sealed case class Invoke(from: global.MethodSymbol, member: global.MethodSymbol, point: Int, ordinal: Int)
-    extends Trace
+  case class Get(from: global.MethodSymbol, member: global.TermSymbol, point: Int, ordinal: Int)
+    extends Access
 
-  final class Special(from: global.MethodSymbol, member: global.MethodSymbol, point: Int, ordinal: Int)
-    extends Invoke(from, member, point, ordinal)
+  case class Set(from: global.MethodSymbol, member: global.TermSymbol, point: Int, ordinal: Int)
+    extends Access
+
+  case class Virtual(from: global.MethodSymbol, member: global.MethodSymbol, point: Int, ordinal: Int)
+    extends Invocation
+
+  case class Static(from: global.MethodSymbol, member: global.MethodSymbol, point: Int, ordinal: Int)
+    extends Invocation
 }

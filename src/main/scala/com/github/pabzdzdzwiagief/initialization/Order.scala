@@ -65,22 +65,22 @@ private[this] class Order(val global: Global)
         access = for {
           tree ← accesses(defDef) if shouldCheck(tree)
           point = tree.pos.pointOrElse(-1)
-        } yield Access(from, tree.symbol.asTerm, point, ordinals(tree))
+        } yield Get(from, tree.symbol.asTerm, point, ordinals(tree))
         invoke = for {
           tree ← invocations(defDef) if shouldCheck(tree)
           invoked = tree.symbol.asMethod
           point = tree.pos.pointOrElse(-1)
-        } yield Invoke(from, invoked, point, ordinals(tree))
+        } yield Virtual(from, invoked, point, ordinals(tree))
         special = for {
           tree ← specials(defDef) if shouldCheck(tree)
           invoked = tree.symbol.asMethod
           position = if (invoked.isConstructor) invoked.pos else tree.pos
           point = position.pointOrElse(-1)
-        } yield new Special(from, invoked, point, ordinals(tree))
+        } yield new Static(from, invoked, point, ordinals(tree))
         assign = for {
           tree ← assignments(defDef) if shouldCheck(tree)
           point = tree.pos.pointOrElse(-1)
-        } yield Assign(from, tree.lhs.symbol.asTerm, point, ordinals(tree))
+        } yield Set(from, tree.lhs.symbol.asTerm, point, ordinals(tree))
         toAttach = access ::: invoke ::: special ::: assign
         annotationInfos = toAttach.map(toInfo)
       } yield defDef → annotationInfos).toMap

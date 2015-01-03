@@ -35,7 +35,7 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
         present = ErrorFormatter(formatterEnvironment)(_)
         constructor = classSymbol.primaryConstructor.asMethod
         start = constructor.pos.pointOrElse(-1)
-        stackTrace ← checker(Invoke(constructor, constructor, start, start))
+        stackTrace ← checker(Static(constructor, constructor, start, start))
         error = present(stackTrace).orElse(throw badStackException)
         formatterEnvironment.Error(where, message) ← error
       } {
@@ -53,14 +53,14 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
     type Instruction = Trace
 
     def flatten(x: Instruction): Either[x.type, Stream[Instruction]] = x match {
-      case Invoke(_, m: MethodSymbol, _, _) => Right(follow(m).toStream)
+      case invoke: Invocation => Right(follow(invoke.member).toStream)
       case _ => Left(x)
     }
 
     def lessThan(x: Instruction, y: Instruction) = x.ordinal < y.ordinal
 
     def conflict(x: Instruction, y: Instruction) = (x, y) match {
-      case (Access(_, v1, _, _), Assign(_, v2, _, _)) => v1 == v2
+      case (Get(_, v1, _, _), Set(_, v2, _, _)) => v1 == v2
       case _ => false
     }
 
@@ -87,18 +87,18 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
       rawName = global.stringToTermName(memberName)
       internalName = if (rawName == CONSTRUCTOR) rawName else rawName.encode
       name = traceType match {
-        case "Special" | "Invoke"  => internalName
-        case "Access" | "Assign" => getterToLocal(internalName)
+        case "Static" | "Virtual"  => internalName
+        case "Get" | "Set" => getterToLocal(internalName)
       }
       symbol ← fromType.memberBasedOnName(name, 0).alternatives
       if fromType.memberType(symbol).safeToString == typeString
     } yield traceType match {
-      case "Special" => new Special(method, symbol.asMethod, point, ordinal)
-      case "Invoke" => Invoke(method, symbol.overridingSymbol(inClass)
+      case "Static" => Static(method, symbol.asMethod, point, ordinal)
+      case "Virtual" => Virtual(method, symbol.overridingSymbol(inClass)
                                     .orElse(symbol)
                                     .asMethod, point, ordinal)
-      case "Access" => Access(method, symbol.asTerm, point, ordinal)
-      case "Assign" => Assign(method, symbol.asTerm, point, ordinal)
+      case "Get" => Get(method, symbol.asTerm, point, ordinal)
+      case "Set" => Set(method, symbol.asTerm, point, ordinal)
     }
 
     private[this] val traceType =
