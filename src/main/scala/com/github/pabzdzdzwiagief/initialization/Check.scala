@@ -11,10 +11,8 @@ import tools.nsc.Phase
 import tools.nsc.plugins.PluginComponent
 
 private[this] class Check(val global: Global) extends PluginComponent with Annotations {
-  import global.{ClassDef, CompilationUnit, LiteralAnnotArg, Constant}
-  import global.{MethodSymbol, ClassSymbol}
+  import global.{ClassDef, CompilationUnit, ClassSymbol}
   import global.rootMirror.getRequiredClass
-  import global.nme.{getterToLocal, CONSTRUCTOR}
   import ReferenceBeforeAssignmentChecker.Environment
 
   override final val phaseName = "initcheck"
@@ -89,6 +87,4 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
 
     def line(x: Location): Int = x.safeLine
   }
-
-
 }

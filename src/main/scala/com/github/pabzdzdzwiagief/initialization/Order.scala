@@ -9,8 +9,6 @@ import tools.nsc.Global
 import tools.nsc.plugins.PluginComponent
 import tools.nsc.transform.Transform
 
-import com.github.pabzdzdzwiagief.initialization.{Trace => TraceAnnotation}
-
 private[this] class Order(val global: Global)
   extends PluginComponent with Transform with Annotations {
   import global.{CompilationUnit, Transformer}
