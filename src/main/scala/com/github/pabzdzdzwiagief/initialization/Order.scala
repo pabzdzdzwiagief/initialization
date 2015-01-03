@@ -96,9 +96,9 @@ private[this] class Order(val global: Global)
       case _ => Nil
     }
 
-    /** @return trees that represent member accesses.
+    /** @return trees that represent unchecked expressions.
       *         Matches trees of form:
-      *         - (expr: @uncheckedInitialization)
+      *         - (expr: @unchecked)
       */
     private[this] def unchecks(t: DefDef): List[Typed] = t.collect {
       case t@ Typed(_, tpt: TypeTree) if (tpt.original match {
@@ -112,7 +112,7 @@ private[this] class Order(val global: Global)
 
     /** @return trees that represent member assignments.
       *         Matches trees of form:
-      *         - Class.this.field = ...
+      *         - Class.this.field = ..., where this.field is immutable
       */
     private[this] def assignments(t: Tree): List[AssignTree] = t.collect {
       case a@ AssignTree(s@ Select(This(_), _), _) if !s.symbol.isMutable => a
