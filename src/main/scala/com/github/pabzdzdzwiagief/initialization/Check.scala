@@ -10,8 +10,6 @@ import tools.nsc.Global
 import tools.nsc.Phase
 import tools.nsc.plugins.PluginComponent
 
-import com.github.pabzdzdzwiagief.initialization.{Trace => TraceAnnotation}
-
 private[this] class Check(val global: Global) extends PluginComponent with Annotations {
   import global.{ClassDef, CompilationUnit, LiteralAnnotArg, Constant}
   import global.{MethodSymbol, ClassSymbol}
@@ -53,7 +51,7 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
     type Instruction = Trace
 
     def flatten(x: Instruction): Either[x.type, Stream[Instruction]] = x match {
-      case invoke: Invocation => Right(follow(invoke.member).toStream)
+      case invoke: Invocation => Right(follow(invoke).toStream)
       case _ => Left(x)
     }
 
@@ -67,42 +65,10 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
     /** Loads information about instructions executed in given method
       * from annotations attached to it.
       */
-    private[this] def follow(method: MethodSymbol): Seq[Trace] = for {
-      info ← method.owner.annotations
-      if info.atp <:< traceType
-      map = info.javaArgs map {
-        case (n, a: LiteralAnnotArg) => (n.decoded, a.const)
-      }
-      Constant(owner: String) = map("owner")
-      Constant(memberName: String) = map("memberName")
-      Constant(fromMemberName: String) = map("fromMemberName")
-      Constant(typeString: String) = map("typeString")
-      Constant(fromTypeString: String) = map("fromTypeString")
-      Constant(traceType: String) = map("traceType")
-      Constant(point: Int) = map("point")
-      Constant(ordinal: Int) = map("ordinal")
-      if fromMemberName == method.nameString
-      if fromTypeString == method.info.safeToString
-      fromType = getRequiredClass(owner).tpe
-      rawName = global.stringToTermName(memberName)
-      internalName = if (rawName == CONSTRUCTOR) rawName else rawName.encode
-      name = traceType match {
-        case "Static" | "Virtual"  => internalName
-        case "Get" | "Set" => getterToLocal(internalName)
-      }
-      symbol ← fromType.memberBasedOnName(name, 0).alternatives
-      if fromType.memberType(symbol).safeToString == typeString
-    } yield traceType match {
-      case "Static" => Static(method, symbol.asMethod, point, ordinal)
-      case "Virtual" => Virtual(method, symbol.overridingSymbol(inClass)
-                                    .orElse(symbol)
-                                    .asMethod, point, ordinal)
-      case "Get" => Get(method, symbol.asTerm, point, ordinal)
-      case "Set" => Set(method, symbol.asTerm, point, ordinal)
-    }
-
-    private[this] val traceType =
-      getRequiredClass(classOf[TraceAnnotation].getCanonicalName).tpe
+    private[this] def follow(invocation: Invocation): Seq[Trace] = for {
+      info ← invocation.member.owner.annotations
+      trace ← Trace.fromAnnotation(info, invocation.member, inClass)
+    } yield trace
   }
 
   private[this] object formatterEnvironment extends ErrorFormatter.Environment {

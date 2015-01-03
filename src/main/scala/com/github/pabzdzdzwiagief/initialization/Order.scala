@@ -15,11 +15,7 @@ private[this] class Order(val global: Global)
   import global.{CompilationUnit, Transformer}
   import global.{Tree, ClassDef, DefDef}
   import global.{Select, This, Assign => AssignTree, Apply, Ident, Super}
-  import global.{Typed, TypeTree, Annotated, AnnotatedType}
-  import global.{LiteralAnnotArg, Constant}
-  import global.AnnotationInfo
-  import global.rootMirror.getRequiredClass
-  import global.stringToTermName
+  import global.{Typed, TypeTree, Annotated, AnnotatedType, AnnotationInfo}
   import global.definitions.UncheckedClass.{tpe => uncheckedType}
 
   override final val phaseName = "initorder"
@@ -82,7 +78,7 @@ private[this] class Order(val global: Global)
           point = tree.pos.pointOrElse(-1)
         } yield Set(from, tree.lhs.symbol.asTerm, point, ordinals(tree))
         toAttach = access ::: invoke ::: special ::: assign
-        annotationInfos = toAttach.map(toInfo)
+        annotationInfos = toAttach.map(Trace.toAnnotation)
       } yield defDef → annotationInfos).toMap
 
     /** Works like [[scala.reflect.internal.Trees#Tree.children]], but puts
@@ -151,25 +147,6 @@ private[this] class Order(val global: Global)
         case s@ Select(This(_), _) if s.symbol.isPrivateLocal => s
       }
       case _ => Nil
-    }
-
-    /** Converts regular annotation object to
-      * [[scala.reflect.internal.AnnotationInfos#AnnotationInfo]].
-      */
-    private[this] def toInfo(annotation: Trace): AnnotationInfo = {
-      val name = classOf[TraceAnnotation].getCanonicalName
-      def a(x: Any) = LiteralAnnotArg(Constant(x))
-      def n(s: String) = stringToTermName(s)
-      AnnotationInfo(getRequiredClass(name).tpe, Nil, List(
-        n("owner") → a(annotation.member.owner.fullNameString),
-        n("memberName") → a(annotation.member.nameString),
-        n("fromMemberName") → a(annotation.from.nameString),
-        n("fromTypeString") → a(annotation.from.info.safeToString),
-        n("typeString") → a(annotation.member.info.safeToString),
-        n("traceType") → a(annotation.getClass.getSimpleName),
-        n("point") → a(annotation.point),
-        n("ordinal") → a(annotation.ordinal)
-      ))
     }
   }
 }
