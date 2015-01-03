@@ -49,8 +49,8 @@ private[this] object ErrorFormatter {
       location = env.location(instruction, context)
       className = env.className(instruction)
       methodName = env.methodName(instruction)
-      fileName = location.map(env.fileName(_)).getOrElse(null)
-      line = location.map(env.line(_)).getOrElse(-1)
+      fileName = location.map(env.fileName).orNull
+      line = location.map(env.line).getOrElse(-1)
     } yield new StackTraceElement(className, methodName, fileName, line)
     exceptionImitation = exception(env.methodName(accessor))(javaStackTrace)
     location = env.location(accessor, last)

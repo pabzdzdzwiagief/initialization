@@ -20,7 +20,7 @@ abstract class base {
 
 // overrides.scala:7: warning: value v2 is referenced before assignment
 //         at localhost.overrides.m1(overrides.scala:13)
-//         at localhost.base.<init>(overrides.scala:11)
+//         at localhost.base.<init>(overrides.scala:5)
 //         at localhost.overrides.<init>(overrides.scala:5)
 //
 //     println(v2)

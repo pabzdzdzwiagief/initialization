@@ -69,8 +69,7 @@ private[this] class Order(val global: Global)
         special = for {
           tree ← specials(defDef) if shouldCheck(tree)
           invoked = tree.symbol.asMethod
-          position = if (invoked.isConstructor) invoked.pos else tree.pos
-          point = position.pointOrElse(-1)
+          point = tree.pos.pointOrElse(-1)
         } yield new Static(from, invoked, point, ordinals(tree))
         assign = for {
           tree ← assignments(defDef) if shouldCheck(tree)

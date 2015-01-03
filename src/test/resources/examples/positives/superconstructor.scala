@@ -17,7 +17,7 @@ abstract class base {
 
 // superconstructor.scala:14: warning: value v1 is referenced before assignment
 //         at localhost.base.m1(superconstructor.scala:11)
-//         at localhost.base.<init>(superconstructor.scala:9)
+//         at localhost.base.<init>(superconstructor.scala:5)
 //         at localhost.superconstructor.<init>(superconstructor.scala:5)
 //
 //     println(v1)
