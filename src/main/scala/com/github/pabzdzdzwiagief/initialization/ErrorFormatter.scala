@@ -17,7 +17,7 @@ private[this] object ErrorFormatter {
     /** Location in a source file. */
     type Location
 
-    /** @return name of class to which belonds member used by instruction. */
+    /** @return name of class to which belongs member used by instruction. */
     def className(x: Instruction): String
 
     /** @return name of method called by instruction. */
@@ -25,7 +25,7 @@ private[this] object ErrorFormatter {
 
     /** @param x executed instruction.
       * @param context member in context of which the accessor is invoked.
-      * @return some location of errorneous reference, none if it is unknown.
+      * @return some location of erroneous reference, none if it is unknown.
       */
     def location(x: Instruction, context: Instruction): Option[Location]
 
@@ -59,7 +59,7 @@ private[this] object ErrorFormatter {
 
   /** @param name name of member that can be referenced before assignment.
     * @param trace list of stack trace elements beginning with the deepest one.
-    * @return fake exception that immitates one that could be thrown upon
+    * @return fake exception that imitates one that could be thrown upon
     *         access to uninitialized value.
     */
   private[this] def exception(name: String)
