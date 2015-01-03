@@ -4,6 +4,7 @@
 
 package com.github.pabzdzdzwiagief.initialization
 
+import scala.reflect.internal.Flags
 import tools.nsc.Global
 import tools.nsc.plugins.PluginComponent
 import tools.nsc.transform.Transform
@@ -121,11 +122,18 @@ private[this] class Order(val global: Global)
       *         Matches trees of form:
       *         - Class.this.method(...)
       *         - $this.method(...), where $this is Mixin.$init$ parameter
+      *         - Trait$class.method(this, ...), where Trait$class is Trait's
+      *                                          implementation module
       */
-    private[this] def invocations(t: Tree): List[Apply] = t.collect {
+    private[this] def invocations(t: DefDef): List[Apply] = t.collect {
       case a@ Apply(Select(This(_), _), _) => a
       case a@ Apply(Select(i: Ident, _), _)
-        if i.hasSymbolWhich(_.owner.isMixinConstructor) => a
+        if i.hasSymbolWhich(_.name == global.nme.SELF)
+        && i.hasSymbolWhich(_.owner.owner.isTrait) => a
+      case a@ Apply(_: Select, This(_) :: _)
+        if t.hasSymbolWhich(_.hasFlag(Flags.MIXEDIN))
+        && a.hasSymbolWhich(_.isMethod)
+        && a.hasSymbolWhich(_.owner.isImplClass) => a
     }
 
      /** @return trees that represent special member method invocations.
