@@ -121,6 +121,8 @@ private[this] class Order(val global: Global)
       *         - $this.method(...), where $this is Mixin.$init$ parameter
       *         - Trait$class.method(this, ...), where Trait$class is Trait's
       *                                          implementation module
+      *         - $outer.method(...), where $outer is an outer parameter used
+      *                               in a constructor of an inner class
       */
     private[this] def invocations(t: DefDef): List[Apply] = t.collect {
       case a@ Apply(Select(This(_), _), _) => a
@@ -131,16 +133,25 @@ private[this] class Order(val global: Global)
         if t.hasSymbolWhich(_.hasFlag(Flags.MIXEDIN))
         && a.hasSymbolWhich(_.isMethod)
         && a.hasSymbolWhich(_.owner.isImplClass) => a
+      case a@ Apply(Select(i@ Ident(global.nme.OUTER), _), _)
+        if i.hasSymbolWhich(_.isValueParameter)
+        && i.hasSymbolWhich(_.owner.isConstructor)
+        && i.hasSymbolWhich(_.owner.owner.isLifted) => a
     }
 
      /** @return trees that represent special member method invocations.
        *         Matches trees of form:
        *        - Class.super.method(...)
        *        - Mixin.$init$(...)
+       *        - new Class.Inner(...), where Inner is an inner class
+       *                                enclosed by Class
        */
     private[this] def specials(t: Tree): List[Apply] = t.collect {
       case a@ Apply(Select(Super(_, _), _), _) => a
       case a@ Apply(_, _) if a.symbol.isMixinConstructor => a
+      case a@ Apply(_, This(_) :: _)
+        if a.hasSymbolWhich(_.isConstructor)
+        && a.hasSymbolWhich(_.owner.isLifted) => a
     }
 
     /** @return trees that represent member accesses.
