@@ -79,9 +79,10 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
     def methodName(x: Instruction): String = x.member.name.toString
 
     def location(x: Instruction, context: Instruction): Option[Location] = for {
-      source ← Option(context.member.sourceFile)
-      point ← if (x.point == -1) None else Some(x.point)
-    } yield new OffsetPosition(new BatchSourceFile(source), point)
+      source ← Option(context.member.sourceFile).orElse(Option(getRequiredClass(
+        context.member.owner.javaClassName.split('$').head).sourceFile
+      )) if x.point != -1
+    } yield new OffsetPosition(new BatchSourceFile(source), x.point)
 
     def fileName(x: Location): String = x.source.file.name
 
