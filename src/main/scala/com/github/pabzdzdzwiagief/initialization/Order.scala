@@ -123,6 +123,12 @@ private[this] class Order(val global: Global)
       *                                          implementation module
       *         - $outer.method(...), where $outer is an outer parameter used
       *                               in a constructor of an inner class
+      *         - this.$outer1.$outer2.method(...), where $outerN is an outer
+      *                                             reference used in a method
+      *                                             of an inner class
+      *         - this.x.y.z(...), where any of x, y, z is a member
+      *                            of an inner class
+      *
       */
     private[this] def invocations(t: DefDef): List[Apply] = t.collect {
       case a@ Apply(Select(This(_), _), _) => a
@@ -137,6 +143,19 @@ private[this] class Order(val global: Global)
         if i.hasSymbolWhich(_.isValueParameter)
         && i.hasSymbolWhich(_.owner.isConstructor)
         && i.hasSymbolWhich(_.owner.owner.isLifted) => a
+      case a@ Apply(Select(o: Apply, _), _)
+        if a.hasSymbolWhich(!_.isOuterAccessor)
+        && o.forAll {
+          case This(_) => true
+          case accessorChainSelect: Select
+            if accessorChainSelect.hasSymbolWhich(_.isOuterAccessor) => true
+          case accessorChainApply: Apply
+            if accessorChainApply.hasSymbolWhich(_.isOuterAccessor) => true
+          case _ => false
+        } => a
+      case a: Apply
+        if a.exists { case Select(This(_), _) => true case _ => false }
+        && a.hasSymbolWhich(_.owner.isLifted) => a
     }
 
      /** @return trees that represent special member method invocations.
@@ -157,10 +176,14 @@ private[this] class Order(val global: Global)
     /** @return trees that represent member accesses.
       *         Matches trees of form:
       *         - Class.this.field, inside stable member accessor def
+      *         - Class.this, where Class is an outer class
       */
     private[this] def accesses(t: DefDef): List[Select] = t match {
       case d if d.symbol.isAccessor && d.symbol.isStable => d.collect {
         case s@ Select(This(_), _) if s.symbol.isPrivateLocal => s
+      }
+      case d if d.symbol.isOuterAccessor => d.collect {
+        case s@ Select(This(_), _) if s.symbol.isProtected => s
       }
       case _ => Nil
     }
