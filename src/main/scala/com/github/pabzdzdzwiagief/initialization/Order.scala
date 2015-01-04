@@ -121,10 +121,13 @@ private[this] class Order(val global: Global)
       *         - $this.method(...), where $this is Mixin.$init$ parameter
       *         - Trait$class.method(this, ...), where Trait$class is Trait's
       *                                          implementation module
-      *         - $outer.method(...), where $outer is an outer parameter used
-      *                               in a constructor of an inner class
+      *         - $outer.$outer1.$outer2.method(...), where $outer is an outer
+      *                                               parameter used in
+      *                                               a constructor of an
+      *                                               inner class and $outerN
+      *                                               is an outer accessor
       *         - this.$outer1.$outer2.method(...), where $outerN is an outer
-      *                                             reference used in a method
+      *                                             accessor used in a method
       *                                             of an inner class
       *         - this.x.y.z(...), where any of x, y, z is a member
       *                            of an inner class
@@ -139,13 +142,13 @@ private[this] class Order(val global: Global)
         if t.hasSymbolWhich(_.hasFlag(Flags.MIXEDIN))
         && a.hasSymbolWhich(_.isMethod)
         && a.hasSymbolWhich(_.owner.isImplClass) => a
-      case a@ Apply(Select(i@ Ident(global.nme.OUTER), _), _)
-        if i.hasSymbolWhich(_.isValueParameter)
-        && i.hasSymbolWhich(_.owner.isConstructor)
-        && i.hasSymbolWhich(_.owner.owner.isLifted) => a
-      case a@ Apply(Select(o: Apply, _), _)
+      case a@ Apply(Select(outer, _), _)
         if a.hasSymbolWhich(!_.isOuterAccessor)
-        && o.forAll {
+        && outer.forAll {
+          case i@ Ident(global.nme.OUTER)
+            if i.hasSymbolWhich(_.isValueParameter)
+            && i.hasSymbolWhich(_.owner.isConstructor)
+            && i.hasSymbolWhich(_.owner.owner.isLifted) => true
           case This(_) => true
           case accessorChainSelect: Select
             if accessorChainSelect.hasSymbolWhich(_.isOuterAccessor) => true
