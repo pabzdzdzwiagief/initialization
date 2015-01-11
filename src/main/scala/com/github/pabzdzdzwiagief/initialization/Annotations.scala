@@ -105,7 +105,7 @@ private[this] trait Annotations {
       def a(x: Any) = LiteralAnnotArg(Constant(x))
       def n(s: String) = stringToTermName(s)
       AnnotationInfo(getRequiredClass(name).tpe, Nil, List(
-        n("owner") → a(trace.member.owner.fullNameString),
+        n("owner") → a(trace.member.owner.javaClassName),
         n("memberName") → a(trace.member.nameString),
         n("fromMemberName") → a(trace.from.nameString),
         n("fromTypeString") → a(trace.from.info.safeToString),
