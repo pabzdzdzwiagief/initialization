@@ -163,12 +163,30 @@ private[this] class Order(val global: Global)
 
      /** @return trees that represent special member method invocations.
        *         Matches trees of form:
+       *        - (new anonymous class anonfun$1(Class.this) : FunctionN),
+       *          where anonfun$1 is an anonymous function, the returned tree
+       *          is however not a reference to constructor, but to apply()
+       *          method
        *        - Class.super.method(...)
        *        - Mixin.$init$(...)
        *        - new Class.Inner(...), where Inner is an inner class
        *                                enclosed by Class
        */
     private[this] def specials(t: Tree): List[Apply] = t.collect {
+      case Typed(a@ Apply(_, This(_) :: _), functionType: TypeTree)
+        if a.hasSymbolWhich(_.isConstructor)
+        && a.hasSymbolWhich(_.owner.isAnonymousFunction) =>
+        new Apply(a.fun, a.args) {
+          override var symbol = a.symbol.owner.info.findMember(
+            global.nme.apply,
+            excludedFlags = Flags.BRIDGE | Flags.DEFERRED,
+            requiredFlags = Flags.FINAL | Flags.METHOD,
+            stableOnly = false
+          ).alternatives.headOption.getOrElse(a.symbol)
+          setPos(a.pos)
+          override def hashCode() = a.hashCode()
+          override def equals(b: Any) = a.equals(b)
+      }
       case a@ Apply(Select(Super(_, _), _), _) => a
       case a@ Apply(_, _) if a.symbol.isMixinConstructor => a
       case a@ Apply(_, This(_) :: _)

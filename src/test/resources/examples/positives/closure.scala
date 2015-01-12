@@ -1,4 +1,4 @@
-// *not implemented* Access from a closure
+// Access from a closure
 
 package localhost
 
@@ -13,6 +13,8 @@ class closure {
 
 // closure.scala:10: warning: value v1 is referenced before assignment
 //         at localhost.closure.m1(closure.scala:6)
+//         at localhost.closure$$anonfun$1.apply$mcV$sp(closure.scala:6)
+//         at localhost.closure$$anonfun$1.apply(closure.scala:6)
 //         at localhost.closure.<init>(closure.scala:5)
 //
 //     println(v1)
