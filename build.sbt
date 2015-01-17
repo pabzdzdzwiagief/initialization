@@ -26,7 +26,7 @@ lazy val annotation = (project in file("annotation")).
   )
 
 lazy val common = Seq (
-  version       := "0.11.0-SNAPSHOT",
+  version       := "0.11.0-rc.1",
   scalaVersion  := "2.10.4",
   scalacOptions := Seq(
     "-deprecation",
