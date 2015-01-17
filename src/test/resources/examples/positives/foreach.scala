@@ -1,4 +1,4 @@
-// Access inside `for` loop
+// Access inside `for` loop with local method
 
 package localhost
 
