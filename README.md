@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/pabzdzdzwiagief/initialization.svg?branch=master)](https://travis-ci.org/pabzdzdzwiagief/initialization)
+
 initialization
 ==============
 
