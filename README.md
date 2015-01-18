@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/pabzdzdzwiagief/initialization.svg?branch=master)](https://travis-ci.org/pabzdzdzwiagief/initialization)
+[![Coverage Status](https://coveralls.io/repos/pabzdzdzwiagief/initialization/badge.svg?branch=master)](https://coveralls.io/r/pabzdzdzwiagief/initialization?branch=master)
 
 initialization
 ==============
