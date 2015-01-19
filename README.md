@@ -55,6 +55,13 @@ For more examples see `src/test/resources/examples/positives/`.
 limitations
 -----------
 
+#### code compiled without the plugin
+
+Initialization problems can be spotted only in the code compiled with
+the plugin. When e.g. extending a class that comes from some external
+library, the analysis will loose its track every time a call graph descends
+to methods defined in that class.
+
 #### false positives
 
 The plugin may happen to be overreactive. In such cases use standard
