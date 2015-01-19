@@ -109,6 +109,25 @@ and while any later partial application/currying will trigger reference check
 anyway, it will at least happen in a closer proximity to the actual function
 call.
 
+test cases
+----------
+
+To add a test case, put a file in `src/test/resources/positives/` directory
+(or in `negatives/` for tests with no compilation warnings expected) with
+the following format:
+
+    // [one-line title of the test case]
+
+    package localhost
+
+    [scala code to compile]
+
+    // [expected compilation messages, with one-space margin]
+    //
+    //
+
+to have it automatically picked up when tests are executed.
+
 license
 -------
 
