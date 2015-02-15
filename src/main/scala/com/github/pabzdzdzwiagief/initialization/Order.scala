@@ -16,6 +16,7 @@ private[this] class Order(val global: Global)
   import global.{Select, This, Assign => AssignTree, Apply, Ident, Super}
   import global.{Typed, TypeTree, Annotated, AnnotationInfo}
   import global.definitions.UncheckedClass.{tpe => uncheckedType}
+  import global.{reporter => out}
 
   override final val phaseName = "initorder"
 
@@ -39,7 +40,7 @@ private[this] class Order(val global: Global)
         classDef
       } catch {
         case e: Exception =>
-          unit.warning(classDef.pos, s"$phaseName: failed with exception: $e")
+          out.warning(classDef.pos, s"$phaseName: failed with exception: $e")
           classDef
       }
       case other => other

@@ -13,6 +13,7 @@ import tools.nsc.plugins.PluginComponent
 private[this] class Check(val global: Global) extends PluginComponent with Annotations {
   import global.{ClassDef, CompilationUnit, ClassSymbol}
   import global.rootMirror.getRequiredClass
+  import global.{reporter => out}
   import ReferenceBeforeAssignmentChecker.Environment
 
   override final val phaseName = "initcheck"
@@ -35,11 +36,11 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
         error = present(stackTrace).orElse(throw badStackException)
         formatterEnvironment.Error(where, message) ← error
       } {
-        unit.warning(where.getOrElse(NoPosition), message)
+        out.warning(where.getOrElse(NoPosition), message)
       }
     } catch {
       case e: Exception =>
-        unit.warning(NoPosition, s"$phaseName: failed with exception: $e")
+        out.warning(NoPosition, s"$phaseName: failed with exception: $e")
     }
 
     private[this] object badStackException extends Exception
@@ -86,6 +87,6 @@ private[this] class Check(val global: Global) extends PluginComponent with Annot
 
     def fileName(x: Location): String = x.source.file.name
 
-    def line(x: Location): Int = x.safeLine
+    def line(x: Location): Int = x.line
   }
 }
