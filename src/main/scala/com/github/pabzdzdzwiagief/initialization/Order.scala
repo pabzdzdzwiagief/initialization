@@ -151,9 +151,13 @@ private[this] class Order(val global: Global)
             && i.hasSymbolWhich(_.owner.owner.isLifted) => true
           case This(_) => true
           case accessorChainSelect: Select
-            if accessorChainSelect.hasSymbolWhich(_.isOuterAccessor) => true
+            if accessorChainSelect.hasSymbolWhich { s =>
+              s.accessedOrSelf.isOuterField || s.isOuterAccessor
+            } => true
           case accessorChainApply: Apply
-            if accessorChainApply.hasSymbolWhich(_.isOuterAccessor) => true
+            if accessorChainApply.hasSymbolWhich { s =>
+              s.accessedOrSelf.isOuterField || s.isOuterAccessor
+            } => true
           case _ => false
         } => a
       case a: Apply
