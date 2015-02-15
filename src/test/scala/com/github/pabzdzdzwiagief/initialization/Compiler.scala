@@ -20,6 +20,10 @@ class Compiler(pluginClasses: Plugin.AnyClass*) extends (SourceFile => String) {
     * @return messages issued by compiler (compilation errors, warnings etc.).
     */
   def apply(source: SourceFile): String = {
+    def removeOtherWarnings(string: String) =
+      string.replaceAll("^.+: Reference to uninitialized value[^^]+\\^\n", "")
+    def normalizeEmptyContexts(string: String) =
+      string.replaceAll("\\)\n$", "\\)")
     def removeLastNewline(string: String) =
       if (string.lastOption.exists(_ == '\n')) string.init else string
     def tabsToEightSpaces(string: String) =
@@ -28,7 +32,10 @@ class Compiler(pluginClasses: Plugin.AnyClass*) extends (SourceFile => String) {
     try {
       compilation.compileSources(List(source))
       val output = writer.getBuffer.toString
-      tabsToEightSpaces(removeLastNewline(output))
+      tabsToEightSpaces(
+        normalizeEmptyContexts(
+          removeLastNewline(
+            removeOtherWarnings(output))))
     } finally {
       writer.getBuffer.setLength(0)
     }

@@ -21,9 +21,9 @@ Add this to your `build.sbt`:
 
      autoCompilerPlugins := true
 
-     libraryDependencies += compilerPlugin("com.github.pabzdzdzwiagief" %% "initialization" % "0.11.0-rc.1")
+     libraryDependencies += compilerPlugin("com.github.pabzdzdzwiagief" %% "initialization" % "0.11.0-rc.2")
 
-     libraryDependencies += "com.github.pabzdzdzwiagief.initialization" %% "annotation" % "0.11.0-rc.1"
+     libraryDependencies += "com.github.pabzdzdzwiagief.initialization" %% "annotation" % "0.11.0-rc.2"
 
 example
 -------

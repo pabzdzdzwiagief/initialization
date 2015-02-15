@@ -51,8 +51,8 @@ private[this] trait Annotations {
   object Trace {
     import global.{LiteralAnnotArg, Constant, AnnotationInfo}
     import global.rootMirror.getRequiredClass
-    import global.nme.{CONSTRUCTOR, getterToLocal}
-    import global.stringToTermName
+    import global.nme.{CONSTRUCTOR, LOCAL_SUFFIX_STRING, isLocalName}
+    import global.newTermName
 
     /** Converts Scalac's internal annotation representation to a Trace
       * object if the annotation represents a Trace.
@@ -76,8 +76,9 @@ private[this] trait Annotations {
       fromType = getRequiredClass(owner).tpe
       if fromMemberName == from.nameString
       if fromTypeString == from.info.safeToString
-      toNameRaw = global.stringToTermName(memberName)
+      toNameRaw = newTermName(memberName)
       toName = if (toNameRaw == CONSTRUCTOR) toNameRaw else toNameRaw.encode
+      accessed = toName.append(LOCAL_SUFFIX_STRING).ensuring(isLocalName _)
       (name, mkTrace) = traceType match {
         case "Static" => (toName, { s: global.Symbol =>
           Static(from, s.asMethod, point, ordinal)
@@ -87,10 +88,10 @@ private[this] trait Annotations {
                          .orElse(s)
                          .asMethod, point, ordinal)
         })
-        case "Get" => (getterToLocal(toName), { s: global.Symbol =>
+        case "Get" => (accessed, { s: global.Symbol =>
           Get(from, s.asTerm, point, ordinal)
         })
-        case "Set" => (getterToLocal(toName), { s: global.Symbol =>
+        case "Set" => (accessed, { s: global.Symbol =>
           Set(from, s.asTerm, point, ordinal)
         })
       }
@@ -103,7 +104,7 @@ private[this] trait Annotations {
     def toAnnotation(trace: Trace): AnnotationInfo = {
       val name = classOf[JavaTrace].getCanonicalName
       def a(x: Any) = LiteralAnnotArg(Constant(x))
-      def n(s: String) = stringToTermName(s)
+      def n(s: String) = newTermName(s)
       AnnotationInfo(getRequiredClass(name).tpe, Nil, List(
         n("owner") → a(trace.member.owner.javaClassName),
         n("memberName") → a(trace.member.nameString),

@@ -14,8 +14,9 @@ private[this] class Order(val global: Global)
   import global.{CompilationUnit, Transformer}
   import global.{Tree, ClassDef, DefDef}
   import global.{Select, This, Assign => AssignTree, Apply, Ident, Super}
-  import global.{Typed, TypeTree, Annotated, AnnotatedType, AnnotationInfo}
+  import global.{Typed, TypeTree, Annotated, AnnotationInfo}
   import global.definitions.UncheckedClass.{tpe => uncheckedType}
+  import global.{reporter => out}
 
   override final val phaseName = "initorder"
 
@@ -39,7 +40,7 @@ private[this] class Order(val global: Global)
         classDef
       } catch {
         case e: Exception =>
-          unit.warning(classDef.pos, s"$phaseName: failed with exception: $e")
+          out.warning(classDef.pos, s"$phaseName: failed with exception: $e")
           classDef
       }
       case other => other
@@ -100,7 +101,7 @@ private[this] class Order(val global: Global)
     private[this] def unchecks(t: DefDef): List[Typed] = t.collect {
       case t@ Typed(_, tpt: TypeTree) if (tpt.original match {
         case a: Annotated => a.tpe match {
-          case AnnotatedType(i, _, _) => i.exists(_.tpe <:< uncheckedType)
+          case AnnotatedType(i) => i.exists(_.tpe <:< uncheckedType)
           case _ => false
         }
         case _ => false
@@ -151,9 +152,13 @@ private[this] class Order(val global: Global)
             && i.hasSymbolWhich(_.owner.owner.isLifted) => true
           case This(_) => true
           case accessorChainSelect: Select
-            if accessorChainSelect.hasSymbolWhich(_.isOuterAccessor) => true
+            if accessorChainSelect.hasSymbolWhich { s =>
+              s.accessedOrSelf.isOuterField || s.isOuterAccessor
+            } => true
           case accessorChainApply: Apply
-            if accessorChainApply.hasSymbolWhich(_.isOuterAccessor) => true
+            if accessorChainApply.hasSymbolWhich { s =>
+              s.accessedOrSelf.isOuterField || s.isOuterAccessor
+            } => true
           case _ => false
         } => a
       case a: Apply
@@ -207,6 +212,15 @@ private[this] class Order(val global: Global)
         case s@ Select(This(_), _) if s.symbol.isProtected => s
       }
       case _ => Nil
+    }
+
+    /** AnnotatedType has different interfaces in 2.10 and 2.11.
+      * This extractor is meant to compile under both versions. */
+    private object AnnotatedType {
+      import global.{AnnotatedType => Type}
+      import global.{AnnotationInfo => Info}
+      def unapply(annotated: Type): Option[List[Info]] =
+        Type.unapply(annotated).map(_._1)
     }
   }
 }
